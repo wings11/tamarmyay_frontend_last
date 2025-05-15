@@ -1,0 +1,116 @@
+.login-pagebg {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-size: cover;
+  background-color: #ddd6c5;
+}
+.login-container {
+  position: absolute;
+  max-width: 532px;
+  width: 100%;
+  height: 366px auto;
+  margin: 10px auto;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 80px;
+  z-index: 100;
+}
+.login-pagebg img {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  position: absolute;
+  top: 122px;
+}
+.login-container h2 {
+  margin: 0px;
+  width: 100% auto;
+  text-align: left;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+.form-group label {
+  color: #000;
+  text-align: center;
+  font-family: "Nunito Sans";
+  font-size: 24px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.24px;
+  text-transform: capitalize;
+}
+
+input {
+  width: 525px !important;
+  height: 55px !important;
+  flex-shrink: 0;
+  border-radius: 20px !important;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  background: rgba(224, 224, 224, 0.5);
+  padding: 8px;
+}
+
+.login-button {
+  width: 132px;
+  height: 50px;
+  flex-shrink: 0;
+  background: rgba(224, 224, 224, 0.5);
+  color: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid grey;
+  z-index: 200;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  margin: 0 auto;
+  color: #000;
+  text-align: center;
+  font-family: "Nunito Sans";
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: normal;
+  letter-spacing: 0.2px;
+  text-transform: capitalize;
+  border-radius: 20px;
+}
+
+.login-button:hover {
+  background-color: #e0e0e0;
+}
+.login-button:active {
+  background-color: #e0e0e0;
+  color: white;
+  border: none;
+}
+
+.error {
+  color: red;
+  text-align: center;
+  margin-bottom: 10px;
+}
+@media (max-width: 576px) {
+  .login-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 90%;
+    padding: 10px;
+  }
+  input {
+    width: 20% !important;
+  }
+}

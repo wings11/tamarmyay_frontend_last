@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 function CreateOrder({ token }) {
   const [foodItems, setFoodItems] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [orderItems, setOrderItems] = useState([]);
-  const [orderType, setOrderType] = useState('');
-  const [tableNumber, setTableNumber] = useState('');
-  const [buildingName, setBuildingName] = useState('');
-  const [customerName, setCustomerName] = useState('');
+  const [orderType, setOrderType] = useState("");
+  const [tableNumber, setTableNumber] = useState("");
+  const [buildingName, setBuildingName] = useState("");
+  const [customerName, setCustomerName] = useState("");
   const [tables, setTables] = useState([]);
   const [locations, setLocations] = useState([]);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
 
-  const API_URL = process.env.REACT_APP_API_URL;
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
   // Fetch tables, locations, and categories on mount
   useEffect(() => {
@@ -31,12 +31,17 @@ function CreateOrder({ token }) {
         setLocations(locationsRes.data);
 
         // Fetch categories
-        const categoriesRes = await axios.get(`${API_URL}/api/items/categories`);
+        const categoriesRes = await axios.get(
+          `${API_URL}/api/items/categories`
+        );
         setCategories(categoriesRes.data);
-        setSelectedCategory(categoriesRes.data[0] || '');
+        setSelectedCategory(categoriesRes.data[0] || "");
       } catch (err) {
-        console.error('Error fetching initial data:', err.response?.data || err.message);
-        setError('Failed to load data');
+        console.error(
+          "Error fetching initial data:",
+          err.response?.data || err.message
+        );
+        setError("Failed to load data");
       }
     };
     fetchInitialData();
@@ -45,8 +50,7 @@ function CreateOrder({ token }) {
   // Validate form
   useEffect(() => {
     const isValid =
-      orderType &&
-      (orderType === 'dine-in' ? tableNumber : buildingName);
+      orderType && (orderType === "dine-in" ? tableNumber : buildingName);
     setIsFormValid(isValid);
   }, [orderType, tableNumber, buildingName, customerName]);
 
@@ -55,13 +59,18 @@ function CreateOrder({ token }) {
     const fetchFoodItems = async () => {
       try {
         const url = selectedCategory
-          ? `${API_URL}/api/items/category/${encodeURIComponent(selectedCategory)}`
+          ? `${API_URL}/api/items/category/${encodeURIComponent(
+              selectedCategory
+            )}`
           : `${API_URL}/api/items`;
         const res = await axios.get(url);
         setFoodItems(res.data);
       } catch (err) {
-        console.error('Error fetching food items:', err.response?.data || err.message);
-        setError('Failed to load food items');
+        console.error(
+          "Error fetching food items:",
+          err.response?.data || err.message
+        );
+        setError("Failed to load food items");
       }
     };
     if (selectedCategory && isFormValid) {
@@ -101,14 +110,14 @@ function CreateOrder({ token }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
     if (!isFormValid) {
-      setError('Please fill all required fields');
+      setError("Please fill all required fields");
       return;
     }
     if (orderItems.length === 0) {
-      setError('Please add at least one item to the order');
+      setError("Please add at least one item to the order");
       return;
     }
     try {
@@ -116,25 +125,25 @@ function CreateOrder({ token }) {
         `${API_URL}/api/orders`,
         {
           orderType,
-          tableNumber: orderType === 'dine-in' ? parseInt(tableNumber) : null,
-          buildingName: orderType === 'delivery' ? buildingName : null,
+          tableNumber: orderType === "dine-in" ? parseInt(tableNumber) : null,
+          buildingName: orderType === "delivery" ? buildingName : null,
           customerName,
-          items: orderItems
+          items: orderItems,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setSuccess('Order created successfully!');
+      setSuccess("Order created successfully!");
       setOrderItems([]);
-      setOrderType('');
-      setTableNumber('');
-      setBuildingName('');
-      setCustomerName('');
-      setSelectedCategory(categories[0] || '');
+      setOrderType("");
+      setTableNumber("");
+      setBuildingName("");
+      setCustomerName("");
+      setSelectedCategory(categories[0] || "");
       setFoodItems([]);
       setIsFormValid(false);
     } catch (err) {
-      console.error('Error creating order:', err.response?.data || err.message);
-      setError(err.response?.data?.error || 'Failed to create order');
+      console.error("Error creating order:", err.response?.data || err.message);
+      setError(err.response?.data?.error || "Failed to create order");
     }
   };
 
@@ -160,7 +169,7 @@ function CreateOrder({ token }) {
         </div>
 
         {/* Table Number or Building Name */}
-        {orderType === 'dine-in' && (
+        {orderType === "dine-in" && (
           <div>
             <label>Table Number:</label>
             <select
@@ -177,7 +186,7 @@ function CreateOrder({ token }) {
             </select>
           </div>
         )}
-        {orderType === 'delivery' && (
+        {orderType === "delivery" && (
           <div>
             <label>Building Name:</label>
             <input
@@ -193,37 +202,43 @@ function CreateOrder({ token }) {
               ))}
             </datalist>
 
-             {/* Customer Name */}
-        <div>
-
-          <br></br>
-          <label>Customer Name:</label>
-          <input
-            type="text"
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            required
-          />
-        </div>
+            {/* Customer Name */}
+            <div>
+              <br></br>
+              <label>Customer Name:</label>
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                required
+              />
+            </div>
           </div>
         )}
 
-       
-
         {/* Category Navbar */}
-        <nav style={{ marginBottom: '20px', opacity: isFormValid ? 1 : 0.5 }}>
-          <ul style={{ listStyle: 'none', display: 'flex', gap: '10px', padding: 0, flexWrap: 'wrap' }}>
+        <nav style={{ marginBottom: "20px", opacity: isFormValid ? 1 : 0.5 }}>
+          <ul
+            style={{
+              listStyle: "none",
+              display: "flex",
+              gap: "10px",
+              padding: 0,
+              flexWrap: "wrap",
+            }}
+          >
             {categories.map((cat) => (
               <li key={cat}>
                 <button
                   type="button"
                   style={{
-                    padding: '10px',
-                    background: selectedCategory === cat ? '#007bff' : '#f8f9fa',
-                    color: selectedCategory === cat ? '#fff' : '#000',
-                    border: 'none',
-                    cursor: isFormValid ? 'pointer' : 'not-allowed',
-                    borderRadius: '5px'
+                    padding: "10px",
+                    background:
+                      selectedCategory === cat ? "#007bff" : "#f8f9fa",
+                    color: selectedCategory === cat ? "#fff" : "#000",
+                    border: "none",
+                    cursor: isFormValid ? "pointer" : "not-allowed",
+                    borderRadius: "5px",
                   }}
                   onClick={() => isFormValid && setSelectedCategory(cat)}
                   disabled={!isFormValid}
@@ -236,19 +251,32 @@ function CreateOrder({ token }) {
         </nav>
 
         {/* Food Items */}
-        <div style={{ marginBottom: '20px', opacity: isFormValid ? 1 : 0.5 }}>
-          <h3>Menu ({selectedCategory || 'All'})</h3>
+        <div style={{ marginBottom: "20px", opacity: isFormValid ? 1 : 0.5 }}>
+          <h3>Menu ({selectedCategory || "All"})</h3>
           {foodItems.length === 0 && isFormValid ? (
             <p>No items available</p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                gap: "10px",
+              }}
+            >
               {foodItems.map((item) => (
-                <div key={item.id} style={{ border: '1px solid #ddd', padding: '10px', borderRadius: '5px' }}>
+                <div
+                  key={item.id}
+                  style={{
+                    border: "1px solid #ddd",
+                    padding: "10px",
+                    borderRadius: "5px",
+                  }}
+                >
                   <h4>{item.name}</h4>
                   <p>Price: ${item.price}</p>
                   <p>{item.description}</p>
                   <button
-                  className='btnbtn'
+                    className="btnbtn"
                     type="button"
                     onClick={() => handleAddItem(item)}
                     disabled={!isFormValid}
@@ -275,8 +303,10 @@ function CreateOrder({ token }) {
                     type="number"
                     min="1"
                     value={item.quantity}
-                    onChange={(e) => handleQuantityChange(item.foodItem.id, e.target.value)}
-                    style={{ width: '50px', margin: '0 10px' }}
+                    onChange={(e) =>
+                      handleQuantityChange(item.foodItem.id, e.target.value)
+                    }
+                    style={{ width: "50px", margin: "0 10px" }}
                   />
                   <button
                     type="button"
@@ -290,7 +320,10 @@ function CreateOrder({ token }) {
           )}
         </div>
 
-        <button type="submit" disabled={orderItems.length === 0 || !isFormValid}>
+        <button
+          type="submit"
+          disabled={orderItems.length === 0 || !isFormValid}
+        >
           Create Order
         </button>
       </form>
