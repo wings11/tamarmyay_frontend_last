@@ -8,6 +8,8 @@ import {
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import CreateOrder from "./components/CreateOrder";
+import OrderPage from "./pages/OrderPage";
+import CheckOrder from "./pages/CheckOrder";
 import Checkout from "./components/Checkout";
 import OrderHistory from "./components/OrderHistory";
 import SalesReport from "./components/SalesReport";
@@ -17,6 +19,7 @@ import "./styles.css";
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
+  const [orderItems, setOrderItems] = useState([]); // Global orderItems state
 
   const handleLogin = (newToken) => {
     setToken(newToken);
@@ -28,13 +31,12 @@ function App() {
     localStorage.removeItem("token");
   };
 
+  const resetOrderItems = () => {
+    setOrderItems([]); // Clear orderItems after submission
+  };
+
   return (
-    <Router
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
+    <Router>
       <Routes>
         <Route
           path="/login"
@@ -56,6 +58,35 @@ function App() {
           path="/createorder"
           element={
             token ? <CreateOrder token={token} /> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/orderpage"
+          element={
+            token ? (
+              <OrderPage
+                token={token}
+                orderItems={orderItems}
+                setOrderItems={setOrderItems}
+              />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/orderpage/checkorder"
+          element={
+            token ? (
+              <CheckOrder
+                token={token}
+                orderItems={orderItems}
+                setOrderItems={setOrderItems}
+                resetOrderItems={resetOrderItems}
+              />
+            ) : (
+              <Navigate to="/login" />
+            )
           }
         />
         <Route

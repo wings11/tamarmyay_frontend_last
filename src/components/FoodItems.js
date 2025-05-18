@@ -1,44 +1,51 @@
+// src/components/FoodItems.js
 import React from "react";
 
 function FoodItems({
   foodItems,
   selectedCategory,
   isFormValid,
-  handleAddItem,
+  orderItems,
+  setOrderItems,
 }) {
+  const handleAddItem = (foodItem) => {
+    setOrderItems((prev) => {
+      const existing = prev.find((item) => item.foodItem.id === foodItem.id);
+      if (existing) {
+        return prev.map((item) =>
+          item.foodItem.id === foodItem.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      return [...prev, { foodItem, quantity: 1 }];
+    });
+  };
+
   return (
-    <div style={{ marginBottom: "20px", opacity: isFormValid ? 1 : 0.5 }}>
-      <h3>Menu ({selectedCategory || "All"})</h3>
+    <div className={`mb-5 ${isFormValid ? "opacity-100" : "opacity-50"}`}>
+      <h3 className="text-lg font-semibold mb-2">
+        Menu ({selectedCategory || "All"})
+      </h3>
       {foodItems.length === 0 && isFormValid ? (
         <p>No items available</p>
       ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-            gap: "10px",
-          }}
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {foodItems.map((item) => (
             <div
               key={item.id}
-              style={{
-                border: "1px solid #ddd",
-                padding: "10px",
-                borderRadius: "5px",
-              }}
+              className={`border border-gray-300 p-4 rounded-md cursor-pointer transition-colors ${
+                orderItems.some(
+                  (orderItem) => orderItem.foodItem.id === item.id
+                )
+                  ? "bg-green-500 text-white"
+                  : "bg-white hover:bg-gray-100"
+              }`}
+              onClick={() => isFormValid && handleAddItem(item)}
             >
-              <h4>{item.name}</h4>
+              <h4 className="text-md font-medium">{item.name}</h4>
               <p>Price: ${item.price}</p>
               <p>{item.description}</p>
-              <button
-                className="btnbtn"
-                type="button"
-                onClick={() => handleAddItem(item)}
-                disabled={!isFormValid}
-              >
-                Add to Order
-              </button>
             </div>
           ))}
         </div>
