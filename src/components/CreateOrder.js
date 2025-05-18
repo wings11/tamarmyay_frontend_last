@@ -45,7 +45,7 @@ function CreateOrder({ token }) {
       }
     };
     fetchInitialData();
-  }, []);
+  }, [API_URL]);
 
   // Validate form
   useEffect(() => {
@@ -76,7 +76,7 @@ function CreateOrder({ token }) {
     if (selectedCategory && isFormValid) {
       fetchFoodItems();
     }
-  }, [selectedCategory, isFormValid]);
+  }, [selectedCategory, isFormValid, API_URL]);
 
   const handleAddItem = (foodItem) => {
     setOrderItems((prev) => {
