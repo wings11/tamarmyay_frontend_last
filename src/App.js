@@ -5,7 +5,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import Login from "./components/Login";
+import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import CreateOrder from "./components/CreateOrder";
 import Checkout from "./components/Checkout";
@@ -29,12 +29,17 @@ function App() {
   };
 
   return (
-    <Router>
+    <Router
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <Routes>
         <Route
           path="/login"
           element={
-            token ? <Navigate to="/" /> : <Login onLogin={handleLogin} />
+            token ? <Navigate to="/" /> : <LoginPage onLogin={handleLogin} />
           }
         />
         <Route
@@ -46,14 +51,43 @@ function App() {
               <Navigate to="/login" />
             )
           }
-        >
-          <Route index element={<CreateOrder token={token} />} />
-          <Route path="checkout" element={<Checkout token={token} />} />
-          <Route path="history" element={<OrderHistory token={token} />} />
-          <Route path="sales" element={<SalesReport token={token} />} />
-          <Route path="items" element={<ManageItems token={token} />} />
-          <Route path="locations" element={<ManageLocations token={token} />} />
-        </Route>
+        />
+        <Route
+          path="/createorder"
+          element={
+            token ? <CreateOrder token={token} /> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/checkout"
+          element={
+            token ? <Checkout token={token} /> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            token ? <OrderHistory token={token} /> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/sales"
+          element={
+            token ? <SalesReport token={token} /> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/items"
+          element={
+            token ? <ManageItems token={token} /> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/locations"
+          element={
+            token ? <ManageLocations token={token} /> : <Navigate to="/login" />
+          }
+        />
       </Routes>
     </Router>
   );
