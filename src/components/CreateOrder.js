@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import CategoryNavbar from "./CategoryNavbar";
+import FoodItems from "./FoodItems";
+import OrderItems from "./OrderItems";
+import CreateOrderButton from "./CreateOrderButton";
 
 function CreateOrder({ token }) {
   const [foodItems, setFoodItems] = useState([]);
@@ -148,44 +152,73 @@ function CreateOrder({ token }) {
   };
 
   return (
-    <div>
-      <h2>Create Order</h2>
+    <div className="bg-[#FFFCF1] w-full min-h-screen flex flex-col items-center">
+      <img
+        src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
+        alt="backarrow"
+        className="absolute top-5 right-8 cursor-pointer"
+        onClick={() => window.history.back()}
+      />
+      <img
+        src="https://res.cloudinary.com/dnoitugnb/image/upload/v1746340828/tmylogo.png"
+        alt="Logo"
+        className="w-full md:max-w-[500px] mt-20"
+      />
       {error && <p className="error">{error}</p>}
       {success && <p className="success">{success}</p>}
 
       <form onSubmit={handleSubmit}>
-        {/* Order Type */}
-        <div>
-          <label>Order Type:</label>
-          <select
-            value={orderType}
-            onChange={(e) => setOrderType(e.target.value)}
-            required
+        {/* Order Type Buttons (both always visible) */}
+        <div className="mb-4 flex gap-4">
+          <span className="px-4 py-2 text-black text-center text-xl not-italic font-bold ">
+            {" "}
+            Select Order Type:
+          </span>
+          <button
+            type="button"
+            onClick={() => setOrderType("dine-in")}
+            className={`px-4 py-2 rounded-[20px] border border-gray-500 text-black text-center text-xl not-italic font-bold transition-all duration-200 ${
+              orderType === "dine-in"
+                ? "bg-[#FFF9E3] text-green border-gray-700 shadow-md"
+                : "bg-[#FFF9E3] text-black border-gray-500 hover:bg-gray-300/90"
+            }`}
           >
-            <option value="">Select Order Type</option>
-            <option value="dine-in">Dine-In</option>
-            <option value="delivery">Delivery</option>
-          </select>
+            Dine-In
+          </button>
+          <button
+            type="button"
+            onClick={() => setOrderType("delivery")}
+            className={`px-4 py-2 rounded-[20px] border border-gray-500 text-black text-center text-xl not-italic font-bold transition-all duration-200 ${
+              orderType === "delivery"
+                ? "bg-[#FFF9E3] text-white border-gray-700 shadow-md"
+                : "bg-[#FFF9E3] text-black border-gray-500 hover:bg-gray-300/90"
+            }`}
+          >
+            Delivery
+          </button>
         </div>
 
-        {/* Table Number or Building Name */}
+        {/* Table Selection as Buttons (visible only for Dine-In) */}
         {orderType === "dine-in" && (
-          <div>
-            <label>Table Number:</label>
-            <select
-              value={tableNumber}
-              onChange={(e) => setTableNumber(e.target.value)}
-              required
-            >
-              <option value="">Select Table</option>
-              {tables.map((table) => (
-                <option key={table.id} value={table.tableNumber}>
-                  {table.tableNumber}
-                </option>
-              ))}
-            </select>
+          <div className="mb-4 flex flex-wrap gap-2">
+            {tables.map((table) => (
+              <button
+                key={table.id}
+                type="button"
+                onClick={() => setTableNumber(table.tableNumber)}
+                className={`px-4 py-2 rounded-[20px] border border-gray-500 ${
+                  tableNumber === table.tableNumber
+                    ? "bg-gray-300 text-white"
+                    : "bg-gray-200/50 text-black"
+                } font-nunito text-lg`}
+              >
+                Table {table.tableNumber}
+              </button>
+            ))}
           </div>
         )}
+
+        {/* Delivery Fields (visible only for Delivery) */}
         {orderType === "delivery" && (
           <div>
             <label>Building Name:</label>
@@ -201,10 +234,7 @@ function CreateOrder({ token }) {
                 <option key={location.id} value={location.buildingName} />
               ))}
             </datalist>
-
-            {/* Customer Name */}
             <div>
-              <br></br>
               <label>Customer Name:</label>
               <input
                 type="text"
@@ -216,116 +246,24 @@ function CreateOrder({ token }) {
           </div>
         )}
 
-        {/* Category Navbar */}
-        <nav style={{ marginBottom: "20px", opacity: isFormValid ? 1 : 0.5 }}>
-          <ul
-            style={{
-              listStyle: "none",
-              display: "flex",
-              gap: "10px",
-              padding: 0,
-              flexWrap: "wrap",
-            }}
-          >
-            {categories.map((cat) => (
-              <li key={cat}>
-                <button
-                  type="button"
-                  style={{
-                    padding: "10px",
-                    background:
-                      selectedCategory === cat ? "#007bff" : "#f8f9fa",
-                    color: selectedCategory === cat ? "#fff" : "#000",
-                    border: "none",
-                    cursor: isFormValid ? "pointer" : "not-allowed",
-                    borderRadius: "5px",
-                  }}
-                  onClick={() => isFormValid && setSelectedCategory(cat)}
-                  disabled={!isFormValid}
-                >
-                  {cat}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        {/* Food Items */}
-        <div style={{ marginBottom: "20px", opacity: isFormValid ? 1 : 0.5 }}>
-          <h3>Menu ({selectedCategory || "All"})</h3>
-          {foodItems.length === 0 && isFormValid ? (
-            <p>No items available</p>
-          ) : (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-                gap: "10px",
-              }}
-            >
-              {foodItems.map((item) => (
-                <div
-                  key={item.id}
-                  style={{
-                    border: "1px solid #ddd",
-                    padding: "10px",
-                    borderRadius: "5px",
-                  }}
-                >
-                  <h4>{item.name}</h4>
-                  <p>Price: ${item.price}</p>
-                  <p>{item.description}</p>
-                  <button
-                    className="btnbtn"
-                    type="button"
-                    onClick={() => handleAddItem(item)}
-                    disabled={!isFormValid}
-                  >
-                    Add to Order
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Order Items */}
-        <div>
-          <h3>Order Items</h3>
-          {orderItems.length === 0 ? (
-            <p>No items added</p>
-          ) : (
-            <ul>
-              {orderItems.map((item) => (
-                <li key={item.foodItem.id}>
-                  {item.foodItem.name} - ${item.foodItem.price} x
-                  <input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) =>
-                      handleQuantityChange(item.foodItem.id, e.target.value)
-                    }
-                    style={{ width: "50px", margin: "0 10px" }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveItem(item.foodItem.id)}
-                  >
-                    Remove
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <button
-          type="submit"
-          disabled={orderItems.length === 0 || !isFormValid}
-        >
-          Create Order
-        </button>
+        <CategoryNavbar
+          categories={categories}
+          selectedCategory={selectedCategory}
+          isFormValid={isFormValid}
+          setSelectedCategory={setSelectedCategory}
+        />
+        <FoodItems
+          foodItems={foodItems}
+          selectedCategory={selectedCategory}
+          isFormValid={isFormValid}
+          handleAddItem={handleAddItem}
+        />
+        <OrderItems
+          orderItems={orderItems}
+          handleRemoveItem={handleRemoveItem}
+          handleQuantityChange={handleQuantityChange}
+        />
+        <CreateOrderButton isFormValid={isFormValid} orderItems={orderItems} />
       </form>
     </div>
   );
