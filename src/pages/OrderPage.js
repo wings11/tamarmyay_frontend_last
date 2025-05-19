@@ -92,12 +92,18 @@ function OrderPage({ token, orderItems, setOrderItems }) {
   };
 
   return (
-    <div className="bg-[#FFFCF1] w-full min-h-screen flex flex-col items-center">
-      <div className="absolute top-5 flex justify-between w-full px-8">
+    <div className="flex flex-row ">
+      <CategoryNavbar
+        categories={categories}
+        selectedCategory={selectedCategory}
+        isFormValid={isFormValid}
+        setSelectedCategory={setSelectedCategory}
+      />
+      <div className="bg-[#FFFCF1] w-full min-h-screen flex flex-col items-center">
         <img
           src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
           alt="backarrow"
-          className="cursor-pointer absolute top-5 right-10"
+          className="cursor-pointer absolute top-10 right-10"
           onClick={() => navigate("/createorder")}
         />
         <img
@@ -106,39 +112,30 @@ function OrderPage({ token, orderItems, setOrderItems }) {
           className="cursor-pointer transform fixed bottom-5 right-10 rotate-180"
           onClick={handleForward}
         />
-      </div>
-      <img
-        src="https://res.cloudinary.com/dnoitugnb/image/upload/v1746340828/tmylogo.png"
-        alt="Logo"
-        className="w-full md:max-w-[500px] mt-20"
-      />
-      {error && <p className="error">{error}</p>}
-
-      <div>
-        <CategoryNavbar
-          categories={categories}
-          selectedCategory={selectedCategory}
-          isFormValid={isFormValid}
-          setSelectedCategory={setSelectedCategory}
-        />
-        <FoodItems
-          foodItems={foodItems}
-          selectedCategory={selectedCategory}
-          isFormValid={isFormValid}
-          orderItems={orderItems}
-          setOrderItems={setOrderItems}
-        />
-        <button
-          onClick={handleCheckOrder}
-          disabled={orderItems.length === 0}
-          className={`mt-4 px-6 py-2 rounded-[20px] text-white font-bold ${
-            orderItems.length > 0
-              ? "bg-green-500 hover:bg-green-600"
-              : "bg-gray-400 cursor-not-allowed"
-          }`}
-        >
-          Check Order
-        </button>
+        <h3 className="p-20  text-black text-center text-2xl not-italic font-bold uppercase underline">
+          {selectedCategory || "All"}
+        </h3>
+        {error && <p className="error">{error}</p>}
+        <>
+          <FoodItems
+            foodItems={foodItems}
+            selectedCategory={selectedCategory}
+            isFormValid={isFormValid}
+            orderItems={orderItems}
+            setOrderItems={setOrderItems}
+          />
+          <button
+            onClick={handleCheckOrder}
+            disabled={orderItems.length === 0}
+            className={`mt-4 px-6 py-2 rounded-[20px] text-black font-bold ${
+              orderItems.length > 0
+                ? "bg-[#E0C9A6] hover:bg-gray-600 hover:text-white"
+                : "bg-gray-400  cursor-not-allowed"
+            }`}
+          >
+            Check Order
+          </button>
+        </>
       </div>
     </div>
   );

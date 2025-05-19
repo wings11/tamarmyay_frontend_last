@@ -7,28 +7,25 @@ function CategoryNavbar({
   setSelectedCategory,
 }) {
   return (
-    <nav style={{ marginBottom: "20px", opacity: isFormValid ? 1 : 0.5 }}>
-      <ul
-        style={{
-          listStyle: "none",
-          display: "flex",
-          gap: "10px",
-          padding: 0,
-          flexWrap: "wrap",
-        }}
-      >
+    <nav
+      className="w-[160px] bg-[#FFFCF1] border-r-2 border-black"
+      style={{ opacity: isFormValid ? 1 : 0.5 }}
+    >
+      <img
+        src="https://res.cloudinary.com/dnoitugnb/image/upload/v1746340828/tmylogo.png"
+        alt="Logo"
+        className="w-full md:max-w-[300px] mt-16 mb-16"
+      />
+      <ul className="flex flex-col items-center gap-5 p-0">
         {categories.map((cat) => (
           <li key={cat}>
             <button
               type="button"
-              style={{
-                padding: "10px",
-                background: selectedCategory === cat ? "#007bff" : "#f8f9fa",
-                color: selectedCategory === cat ? "#fff" : "#000",
-                border: "none",
-                cursor: isFormValid ? "pointer" : "not-allowed",
-                borderRadius: "5px",
-              }}
+              className={`w-[144px] h-[35px] rounded-md text-md font-medium transition-all duration-200 ${
+                selectedCategory === cat
+                  ? "bg-[#e4d4af] text-black border-gray-700"
+                  : "bg-[#FFFCF1] text-black border-gray-500 hover:bg-[#ede7d3]"
+              } ${isFormValid ? "cursor-pointer" : "cursor-not-allowed"}`}
               onClick={() => isFormValid && setSelectedCategory(cat)}
               disabled={!isFormValid}
             >
