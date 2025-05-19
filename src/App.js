@@ -5,7 +5,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import LoginPage from "./pages/LoginPage";
+import Login from "./components/Login";
 import HomePage from "./pages/HomePage";
 import CreateOrder from "./components/CreateOrder";
 import OrderPage from "./pages/OrderPage";
@@ -41,7 +41,7 @@ function App() {
         <Route
           path="/login"
           element={
-            token ? <Navigate to="/" /> : <LoginPage onLogin={handleLogin} />
+            token ? <Navigate to="/" /> : <Login onLogin={handleLogin} />
           }
         />
         <Route
