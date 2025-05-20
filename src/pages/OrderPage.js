@@ -99,7 +99,7 @@ function OrderPage({ token, orderItems, setOrderItems }) {
         isFormValid={isFormValid}
         setSelectedCategory={setSelectedCategory}
       />
-      <div className="bg-[#FFFCF1] w-full min-h-screen flex flex-col items-center">
+      <div className="bg-[#FFFCF1] w-full min-h-screen  flex flex-col items-center">
         <img
           src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
           alt="backarrow"
@@ -112,7 +112,7 @@ function OrderPage({ token, orderItems, setOrderItems }) {
           className="cursor-pointer transform fixed bottom-5 right-10 rotate-180"
           onClick={handleForward}
         />
-        <h3 className="p-20  text-black text-center text-2xl not-italic font-bold uppercase underline">
+        <h3 className="p-20  text-black text-center text-3xl not-italic font-bold uppercase underline">
           {selectedCategory || "All"}
         </h3>
         {error && <p className="error">{error}</p>}

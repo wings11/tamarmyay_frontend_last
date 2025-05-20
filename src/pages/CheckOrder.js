@@ -79,98 +79,109 @@ function CheckOrder({ token, orderItems, setOrderItems, resetOrderItems }) {
   };
 
   return (
-    <div className="bg-[#FFFCF1] w-full min-h-screen flex flex-col items-center">
-      <img
-        src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
-        alt="backarrow"
-        className="cursor-pointer absolute top-10 right-10"
-        onClick={() =>
-          navigate("/orderpage", {
-            state: {
-              orderItems,
-              orderType,
-              tableNumber,
-              buildingName,
-              customerName,
-            },
-          })
-        }
-      />
-      <img
-        src="https://res.cloudinary.com/dnoitugnb/image/upload/v1746340828/tmylogo.png"
-        alt="Logo"
-        className="w-full md:max-w-[500px] mt-20"
-      />
-      {error && <p className="error">{error}</p>}
-      {success && <p className="success">{success}</p>}
-
-      <div className="w-full max-w-2xl p-4 bg-white rounded-lg shadow-md mt-6">
-        <div className="grid grid-cols-2 gap-4">
-          <h3 className="text-lg font-semibold">Items</h3>
-          <h3 className="text-lg font-semibold">Quantity</h3>
-        </div>
-        {orderItems.map((item) => (
-          <div key={item.foodItem.id} className="grid grid-cols-2 gap-4 py-2">
-            <span className="text-md">{item.foodItem.name}</span>
-            <div className="flex items-center space-x-2">
-              <button
-                className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                onClick={() =>
-                  handleQuantityChange(
-                    item.foodItem.id,
-                    Math.max(1, item.quantity - 1)
-                  )
-                }
-              >
-                -
-              </button>
-              <span className="text-md">{item.quantity}</span>
-              <button
-                className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                onClick={() =>
-                  handleQuantityChange(item.foodItem.id, item.quantity + 1)
-                }
-              >
-                +
-              </button>
-              <button
-                className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                onClick={() => handleRemoveItem(item.foodItem.id)}
-              >
-                Remove
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-      <button
-        onClick={handleSubmit}
-        disabled={orderItems.length === 0}
-        className={`mt-6 px-6 py-3 rounded-[25px] text-white font-semibold ${
-          orderItems.length > 0
-            ? "bg-[#DCC99B] hover:bg-[#DCC99B]/80"
-            : "bg-gray-400 cursor-not-allowed"
-        }`}
+    <div className="flex flex-row items-center">
+      <nav
+        className="w-[160px] h-screen  bg-[#FFFCF1] border-r-2 border-black"
+        style={{ opacity: 1 }}
       >
-        Send Order
-      </button>
-
-      {/* Custom Alert Modal */}
-      {showAlert && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-center mb-4">
-              Order created successfully!
+        <img
+          src="https://res.cloudinary.com/dnoitugnb/image/upload/v1746340828/tmylogo.png"
+          alt="Logo"
+          className="w-full md:max-w-[300px] mt-16 mb-16"
+          onClick={() => navigate("/")}
+        />
+      </nav>
+      <div className="bg-[#FFFCF1] border border-grey-500 w-full min-h-screen flex flex-col items-center ">
+        <img
+          src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
+          alt="backarrow"
+          className="cursor-pointer absolute top-10 right-10"
+          onClick={() =>
+            navigate("/orderpage", {
+              state: {
+                orderItems,
+                orderType,
+                tableNumber,
+                buildingName,
+                customerName,
+              },
+            })
+          }
+        />
+        <h3 className="p-20 text-black text-center text-3xl not-italic font-bold uppercase underline -translate-x-20">
+          Check Order
+        </h3>
+        {error && <p className="error">{error}</p>}
+        {success && <p className="success">{success}</p>}
+        <div className="w-[453px] max-w-2xl  p-4 bg-transparent rounded-lg shadow-lg  -translate-x-20 mt-6">
+          <div className="grid grid-cols-2 gap-4">
+            <h3 className="text-black text-center text-lg not-italic font-bold">
+              Items
             </h3>
+            <h3 className="text-lg font-semibold">Quantity</h3>
           </div>
-          <button
-            onClick={handleAlertClose}
-            className="w-50 px-4 py-2 bg-[#DCC99B] text-white rounded-[25px] font-semibold hover:bg-[#DCC99B]/80"
-          >
-            Back to Home Page
-          </button>
+          {orderItems.map((item) => (
+            <div key={item.foodItem.id} className="grid grid-cols-2 gap-4 py-2">
+              <span className="text-md">{item.foodItem.name}</span>
+              <div className="flex items-center space-x-2">
+                <button
+                  className="px-2  bg-transparent rounded-[180px] border border-black hover:bg-gray-300"
+                  onClick={() =>
+                    handleQuantityChange(item.foodItem.id, item.quantity + 1)
+                  }
+                >
+                  +
+                </button>
+                <span className="text-md">{item.quantity}</span>
+                <button
+                  className="px-2  bg-transparent rounded-[180px] border border-black hover:bg-gray-300"
+                  onClick={() =>
+                    handleQuantityChange(
+                      item.foodItem.id,
+                      Math.max(1, item.quantity - 1)
+                    )
+                  }
+                >
+                  -
+                </button>
+                <button
+                  className="px-2 py- bg-red-500 text-white rounded hover:bg-red-600"
+                  onClick={() => handleRemoveItem(item.foodItem.id)}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
-      )}
+        <button
+          onClick={handleSubmit}
+          disabled={orderItems.length === 0}
+          className={`mt-6 w-[160px] h-[55px] mt rounded-[25px] text-black font-semibold border border-gray-600 -translate-x-20 ${
+            orderItems.length > 0
+              ? "bg-[#DCC99B] hover:bg-[#DCC99B]/80"
+              : "bg-gray-400 cursor-not-allowed"
+          }`}
+        >
+          Send Order
+        </button>
+        {/* Custom Alert Modal */}
+        {showAlert && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-50">
+            <div className="bg-[#fff9e3] p-6 rounded-lg shadow-lg max-w-sm  w-[487px] h-32 flex flex-col justify-center">
+              <h3 className="text-black text-center text-xl not-italic font-semibold">
+                Order created successfully!
+              </h3>
+            </div>
+            <button
+              onClick={handleAlertClose}
+              className="w-[160px] h-[55px] mt-10  bg-[#DCC99B] text-black rounded-[25px] font-semibold hover:bg-[#DCC99B]/80"
+            >
+              Back to Home
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

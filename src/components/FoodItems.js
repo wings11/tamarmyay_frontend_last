@@ -24,11 +24,11 @@ function FoodItems({
       {foodItems.length === 0 && isFormValid ? (
         <p>No items available</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-10">
           {foodItems.map((item) => (
             <div
               key={item.id}
-              className={`border rounded-[30px] border-gray-500 w-[160px] h-[90px] rounded-md cursor-pointer transition-colors grid place-items-center shadow-md ${
+              className={`border rounded-[30px] border-gray-500 w-[140px] h-[90px] rounded-md cursor-pointer transition-colors grid place-items-center shadow-md ${
                 orderItems.some(
                   (orderItem) => orderItem.foodItem.id === item.id
                 )

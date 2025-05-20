@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 function CategoryNavbar({
   categories,
@@ -6,6 +7,7 @@ function CategoryNavbar({
   isFormValid,
   setSelectedCategory,
 }) {
+  const navigate = useNavigate();
   return (
     <nav
       className="w-[160px] bg-[#FFFCF1] border-r-2 border-black"
@@ -15,6 +17,7 @@ function CategoryNavbar({
         src="https://res.cloudinary.com/dnoitugnb/image/upload/v1746340828/tmylogo.png"
         alt="Logo"
         className="w-full md:max-w-[300px] mt-16 mb-16"
+        onClick={() => navigate("/")}
       />
       <ul className="flex flex-col items-center gap-5 p-0">
         {categories.map((cat) => (

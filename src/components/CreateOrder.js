@@ -57,7 +57,7 @@ function CreateOrder({ token }) {
         src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
         alt="backarrow"
         className="absolute top-10 right-10 cursor-pointer"
-        onClick={() => window.history.back()}
+        onClick={() => navigate("/")}
       />
       <img
         src="https://res.cloudinary.com/dnoitugnb/image/upload/v1746340828/tmylogo.png"

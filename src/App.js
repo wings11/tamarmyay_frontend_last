@@ -11,6 +11,7 @@ import CreateOrder from "./components/CreateOrder";
 import OrderPage from "./pages/OrderPage";
 import CheckOrder from "./pages/CheckOrder";
 import Checkout from "./components/Checkout";
+import Invoice from "./components/Invoice"; // Import Invoice component
 import OrderHistory from "./components/OrderHistory";
 import SalesReport from "./components/SalesReport";
 import ManageItems from "./components/ManageItems";
@@ -94,6 +95,10 @@ function App() {
           element={
             token ? <Checkout token={token} /> : <Navigate to="/login" />
           }
+        />
+        <Route
+          path="/invoice"
+          element={token ? <Invoice token={token} /> : <Navigate to="/login" />}
         />
         <Route
           path="/history"
