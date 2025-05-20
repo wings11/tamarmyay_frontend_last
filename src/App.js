@@ -11,11 +11,12 @@ import CreateOrder from "./components/CreateOrder";
 import OrderPage from "./pages/OrderPage";
 import CheckOrder from "./pages/CheckOrder";
 import Checkout from "./components/Checkout";
-import Invoice from "./components/Invoice"; // Import Invoice component
+import Invoice from "./components/Invoice";
 import OrderHistory from "./components/OrderHistory";
 import SalesReport from "./components/SalesReport";
 import ManageItems from "./components/ManageItems";
 import ManageLocations from "./components/ManageLocations";
+import ManageItemsAndLocationsPage from "./pages/ManageItemsAndLocationsPage";
 import "./styles.css";
 
 function App() {
@@ -113,13 +114,19 @@ function App() {
           }
         />
         <Route
-          path="/items"
+          path="/management"
+          element={
+            token ? <ManageItemsAndLocationsPage /> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/management/items"
           element={
             token ? <ManageItems token={token} /> : <Navigate to="/login" />
           }
         />
         <Route
-          path="/locations"
+          path="/management/locations"
           element={
             token ? <ManageLocations token={token} /> : <Navigate to="/login" />
           }

@@ -1,96 +1,225 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
-function AddFoodItem({ token }) {
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState('');
-  const [price, setPrice] = useState('');
-  const [description, setDescription] = useState('');
+function AddFoodItem({ token, mode }) {
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+  const [price, setPrice] = useState("");
+  const [description, setDescription] = useState("");
   const [categories, setCategories] = useState([]);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [foodItems, setFoodItems] = useState([]);
+  const [selectedItemId, setSelectedItemId] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axios.get('https://tamarmyaybackend-last.onrender.com/api/items/categories');
-        setCategories(res.data);
-        setCategory(res.data[0] || ''); // Set default category
+        const categoriesRes = await axios.get(
+          "https://tamarmyaybackend-last.onrender.com/api/items/categories"
+        );
+        setCategories(categoriesRes.data);
+        setCategory(categoriesRes.data[0] || "");
+
+        const itemsRes = await axios.get(
+          "https://tamarmyaybackend-last.onrender.com/api/items",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setFoodItems(itemsRes.data);
       } catch (err) {
-        console.error('Error fetching categories:', err.response?.data || err.message);
-        setError('Failed to load categories');
+        console.error(
+          "Error fetching data:",
+          err.response?.data || err.message
+        );
+        setError("Failed to load categories or items");
       }
     };
-    fetchCategories();
-  }, []);
+    fetchData();
+  }, [token]);
+
+  const handleSelectItem = (itemId) => {
+    const item = foodItems.find((i) => i.id === parseInt(itemId));
+    if (item) {
+      setSelectedItemId(item.id);
+      setName(item.name);
+      setCategory(item.category);
+      setPrice(item.price.toString());
+      setDescription(item.description || "");
+    } else {
+      setSelectedItemId("");
+      setName("");
+      setCategory(categories[0] || "");
+      setPrice("");
+      setDescription("");
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
+
+    if (mode === "delete") {
+      if (!selectedItemId) {
+        setError("Please select an item to delete");
+        return;
+      }
+      try {
+        await axios.delete(
+          `https://tamarmyaybackend-last.onrender.com/api/items/${selectedItemId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setSuccess("Food item deleted successfully!");
+        setFoodItems((prev) =>
+          prev.filter((item) => item.id !== selectedItemId)
+        );
+        setSelectedItemId("");
+        setName("");
+        setCategory(categories[0] || "");
+        setPrice("");
+        setDescription("");
+      } catch (err) {
+        console.error(
+          "Error deleting food item:",
+          err.response?.data || err.message
+        );
+        setError(err.response?.data?.error || "Failed to delete food item");
+      }
+      return;
+    }
+
+    const payload = {
+      name,
+      category,
+      price: parseFloat(price) || 0,
+      description,
+    };
+
     try {
-      await axios.post(
-        'https://tamarmyaybackend-last.onrender.com/api/items',
-        { name, category, price: parseFloat(price), description },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setSuccess('Food item added successfully!');
-      setName('');
-      setCategory(categories[0] || '');
-      setPrice('');
-      setDescription('');
+      if (mode === "edit" && selectedItemId) {
+        await axios.put(
+          `https://tamarmyaybackend-last.onrender.com/api/items/${selectedItemId}`,
+          payload,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setSuccess("Food item updated successfully!");
+        setFoodItems((prev) =>
+          prev.map((item) =>
+            item.id === selectedItemId ? { ...item, ...payload } : item
+          )
+        );
+      } else if (mode === "add") {
+        const res = await axios.post(
+          "https://tamarmyaybackend-last.onrender.com/api/items",
+          payload,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setSuccess("Food item added successfully!");
+        setFoodItems((prev) => [...prev, res.data]);
+      } else {
+        setError("Invalid mode or no item selected for edit");
+        return;
+      }
+
+      setSelectedItemId("");
+      setName("");
+      setCategory(categories[0] || "");
+      setPrice("");
+      setDescription("");
     } catch (err) {
-      console.error('Error adding food item:', err.response?.data || err.message);
-      setError(err.response?.data?.error || 'Failed to add food item');
+      console.error(
+        "Error saving food item:",
+        err.response?.data || err.message
+      );
+      setError(err.response?.data?.error || "Failed to save food item");
     }
   };
 
   return (
-    <div>
-      <h2>Add Food Item</h2>
-      {error && <p className="error">{error}</p>}
-      {success && <p className="success">{success}</p>}
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Name:</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label>Category:</label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            required
-          >
-            <option value="">Select Category</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label>Price:</label>
-          <input
-            type="number"
-            step="0.01"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label>Description:</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </div>
-        <button type="submit">Add Food Item</button>
+    <div className="p-4">
+      <h2 className="text-2xl font-bold mb-4">
+        {mode === "add" && "Add Food Item"}
+        {mode === "edit" && "Edit Food Item"}
+        {mode === "delete" && "Delete Food Item"}
+      </h2>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+      {success && <p className="text-green-500 mb-4">{success}</p>}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {(mode === "edit" || mode === "delete") && (
+          <div>
+            <label className="block font-medium">Select Item:</label>
+            <select
+              value={selectedItemId}
+              onChange={(e) => handleSelectItem(e.target.value)}
+              className="w-full p-2 border rounded"
+              required={mode === "delete" || mode === "edit"}
+            >
+              <option value="">Select Item</option>
+              {foodItems.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name} ({item.category})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        {(mode === "add" || (mode === "edit" && selectedItemId)) && (
+          <>
+            <div>
+              <label className="block font-medium">Name:</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-full p-2 border rounded"
+              />
+            </div>
+            <div>
+              <label className="block font-medium">Category:</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                required
+                className="w-full p-2 border rounded"
+              >
+                <option value="">Select Category</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block font-medium">Price (Baht):</label>
+              <input
+                type="number"
+                step="0.01"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                required
+                className="w-full p-2 border rounded"
+              />
+            </div>
+            <div>
+              <label className="block font-medium">Description:</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+          </>
+        )}
+        <button
+          type="submit"
+          className="px-4 py-2 bg-[#DCC99B] text-black rounded hover:bg-[#DCC99B]/80"
+        >
+          {mode === "add" && "Add Food Item"}
+          {mode === "edit" && "Update Food Item"}
+          {mode === "delete" && "Delete Food Item"}
+        </button>
       </form>
     </div>
   );

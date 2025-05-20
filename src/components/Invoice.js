@@ -36,12 +36,12 @@ function Invoice({ token }) {
         const itemsMap = itemsRes.data.reduce((acc, item) => {
           acc[item.id] = {
             ...item,
-            price: parseFloat(item.price) || 0, // Ensure price is a number
+            price: parseFloat(item.price) || 0,
           };
           return acc;
         }, {});
-        // console.log("Food Items Map:", itemsMap); // Debug log
         setFoodItems(itemsMap);
+        console.log("Food Items Map:", itemsMap);
 
         // Fetch orders
         const ordersRes = await axios.get(
@@ -49,7 +49,7 @@ function Invoice({ token }) {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         let fetchedOrders = ordersRes.data;
-        // console.log("Fetched Orders:", fetchedOrders); // Debug log
+        console.log("Fetched Orders:", fetchedOrders);
 
         if (orderId) {
           fetchedOrders = fetchedOrders.filter((order) => order.id === orderId);
@@ -65,7 +65,7 @@ function Invoice({ token }) {
                 ...item.OrderItem,
                 price:
                   parseFloat(item.OrderItem?.price) ||
-                  parseFloat(itemsMap[item.id]?.price) ||
+                  parseFloat(foodItems[item.id]?.price) ||
                   0,
               },
             })) || [],
@@ -150,7 +150,10 @@ function Invoice({ token }) {
           // Calculate total price with validation
           const totalPrice = (
             order.FoodItems?.reduce((sum, item) => {
-              const price = parseFloat(item.OrderItem?.price) || 0;
+              const price =
+                parseFloat(item.OrderItem?.price) ||
+                parseFloat(foodItems[item.id]?.price) ||
+                0;
               const quantity = parseInt(item.OrderItem?.quantity) || 1;
               return sum + price * quantity;
             }, 0) || 0
@@ -224,7 +227,11 @@ function Invoice({ token }) {
                           {item.OrderItem?.quantity || "N/A"}
                         </span>
                         <span className="text-right">
-                          {(parseFloat(item.OrderItem?.price) || 0).toFixed(2)}{" "}
+                          {(
+                            parseFloat(item.OrderItem?.price) ||
+                            parseFloat(foodItems[item.id]?.price) ||
+                            0
+                          ).toFixed(2)}{" "}
                           B
                         </span>
                       </div>
@@ -258,7 +265,7 @@ function Invoice({ token }) {
                   </div>
                   <div className="flex flex-col">
                     <label className="font-semibold text-sm sm:text-base underline mb-2">
-                      Amount
+                      Customer Note
                     </label>
                     <textarea
                       value={customerNote}
