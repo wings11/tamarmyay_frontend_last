@@ -1,4 +1,6 @@
-// src/pages/OrderPage.js
+
+
+
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -38,7 +40,8 @@ function OrderPage({ token, orderItems, setOrderItems }) {
     const fetchInitialData = async () => {
       try {
         const categoriesRes = await axios.get(
-          `${API_URL}/api/items/categories`
+          `${API_URL}/api/items/categories`,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         setCategories(categoriesRes.data);
         setSelectedCategory(categoriesRes.data[0] || "");
@@ -51,8 +54,7 @@ function OrderPage({ token, orderItems, setOrderItems }) {
       }
     };
     fetchInitialData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // API_URL is constant, so we can safely ignore it
+  }, [token, API_URL]);
 
   // Fetch food items when selectedCategory changes
   useEffect(() => {
@@ -63,7 +65,9 @@ function OrderPage({ token, orderItems, setOrderItems }) {
               selectedCategory
             )}`
           : `${API_URL}/api/items`;
-        const res = await axios.get(url);
+        const res = await axios.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setFoodItems(res.data);
       } catch (err) {
         console.error(
@@ -76,30 +80,37 @@ function OrderPage({ token, orderItems, setOrderItems }) {
     if (selectedCategory) {
       fetchFoodItems();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory]); // API_URL is constant, so we can safely ignore it
+  }, [selectedCategory, token, API_URL]);
 
   const handleCheckOrder = () => {
+    if (orderItems.length === 0) {
+      setError("Please select at least one item before checking the order");
+      return;
+    }
     navigate("/orderpage/checkorder", {
       state: { orderItems, orderType, tableNumber, buildingName, customerName },
     });
   };
 
   const handleForward = () => {
+    if (orderItems.length === 0) {
+      setError("Please select at least one item before checking the order");
+      return;
+    }
     navigate("/orderpage/checkorder", {
       state: { orderItems, orderType, tableNumber, buildingName, customerName },
     });
   };
 
   return (
-    <div className="flex flex-row ">
+    <div className="flex flex-row">
       <CategoryNavbar
         categories={categories}
         selectedCategory={selectedCategory}
         isFormValid={isFormValid}
         setSelectedCategory={setSelectedCategory}
       />
-      <div className="bg-[#FFFCF1] w-full min-h-screen  flex flex-col items-center">
+      <div className="bg-[#FFFCF1] w-full min-h-screen flex flex-col items-center">
         <img
           src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
           alt="backarrow"
@@ -112,30 +123,28 @@ function OrderPage({ token, orderItems, setOrderItems }) {
           className="cursor-pointer transform fixed bottom-5 right-10 rotate-180"
           onClick={handleForward}
         />
-        <h3 className="p-20  text-black text-center text-3xl not-italic font-bold uppercase underline">
+        <h3 className="p-20 text-black text-center text-3xl not-italic font-bold uppercase underline">
           {selectedCategory || "All"}
         </h3>
-        {error && <p className="error">{error}</p>}
-        <>
-          <FoodItems
-            foodItems={foodItems}
-            selectedCategory={selectedCategory}
-            isFormValid={isFormValid}
-            orderItems={orderItems}
-            setOrderItems={setOrderItems}
-          />
-          <button
-            onClick={handleCheckOrder}
-            disabled={orderItems.length === 0}
-            className={`mt-4 px-6 py-2 rounded-[20px] text-black font-bold ${
-              orderItems.length > 0
-                ? "bg-[#E0C9A6] hover:bg-gray-600 hover:text-white"
-                : "bg-gray-400  cursor-not-allowed"
-            }`}
-          >
-            Check Order
-          </button>
-        </>
+        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+        <FoodItems
+          foodItems={foodItems}
+          selectedCategory={selectedCategory}
+          isFormValid={isFormValid}
+          orderItems={orderItems}
+          setOrderItems={setOrderItems}
+        />
+        <button
+          onClick={handleCheckOrder}
+          disabled={orderItems.length === 0}
+          className={`mt-4 px-6 py-2 rounded-[20px] text-black font-bold ${
+            orderItems.length > 0
+              ? "bg-[#E0C9A6] hover:bg-gray-600 hover:text-white"
+              : "bg-gray-400 cursor-not-allowed"
+          }`}
+        >
+          Check Order
+        </button>
       </div>
     </div>
   );

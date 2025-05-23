@@ -2,6 +2,12 @@ import React from "react";
 import { Link } from "react-router-dom";
 
 function HomePage({ onLogout }) {
+  const handleLogout = () => {
+    if (window.confirm("Are you sure you want to log out?")) {
+      onLogout();
+    }
+  };
+
   return (
     <div
       className="flex flex-col items-center justify-center min-h-screen bg-[#ddd6c5] bg-cover bg-center"
@@ -50,7 +56,7 @@ function HomePage({ onLogout }) {
         </Link>
         <Link
           to="/login"
-          onClick={onLogout}
+          onClick={handleLogout}
           className="flex items-center justify-center w-[288px] h-16 rounded-[25px] border border-gray-600 bg-[#DCC99B] text-black font-nunito text-xl hover:bg-[#DCC99B]/80 active:bg-gray-300 active:text-white hover:text-white/80 active:border-none"
         >
           Logout
