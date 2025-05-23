@@ -1,66 +1,215 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
-function ManageLocations({ token }) {
+function ManageLocations({ token, mode }) {
   const [locations, setLocations] = useState([]);
-  const [newLocation, setNewLocation] = useState('');
-  const [error, setError] = useState('');
+  const [newLocation, setNewLocation] = useState("");
+  const [editLocationId, setEditLocationId] = useState(null);
+  const [editBuildingName, setEditBuildingName] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const res = await axios.get('https://tamarmyaybackend-last.onrender.com/api/locations');
+        const res = await axios.get(
+          "https://tamarmyaybackend-last.onrender.com/api/locations",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         setLocations(res.data);
       } catch (err) {
-        console.error('Error fetching locations:', err.response?.data || err.message);
-        setError('Failed to load locations');
+        console.error(
+          "Error fetching locations:",
+          err.response?.data || err.message
+        );
+        setError("Failed to load locations");
       }
     };
     fetchLocations();
-  }, []);
+  }, [token]);
 
   const handleAddLocation = async (e) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
     try {
-      const res = await axios.post('https://tamarmyaybackend-last.onrender.com/api/locations', { buildingName: newLocation }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.post(
+        "https://tamarmyaybackend-last.onrender.com/api/locations",
+        { buildingName: newLocation },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setLocations([...locations, res.data]);
-      setNewLocation('');
+      setNewLocation("");
+      setSuccess("Location added successfully!");
     } catch (err) {
-      console.error('Error adding location:', err.response?.data || err.message);
-      setError('Failed to add location');
+      console.error(
+        "Error adding location:",
+        err.response?.data || err.message
+      );
+      setError(err.response?.data?.error || "Failed to add location");
     }
   };
 
+  const handleEditLocation = (location) => {
+    setEditLocationId(location.id);
+    setEditBuildingName(location.buildingName);
+  };
+
+  const handleUpdateLocation = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    try {
+      const res = await axios.put(
+        `https://tamarmyaybackend-last.onrender.com/api/locations/${editLocationId}`,
+        { buildingName: editBuildingName },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setLocations((prev) =>
+        prev.map((loc) =>
+          loc.id === editLocationId
+            ? { ...loc, buildingName: res.data.buildingName }
+            : loc
+        )
+      );
+      setEditLocationId(null);
+      setEditBuildingName("");
+      setSuccess("Location updated successfully!");
+    } catch (err) {
+      console.error(
+        "Error updating location:",
+        err.response?.data || err.message
+      );
+      setError(err.response?.data?.error || "Failed to update location");
+    }
+  };
+
+  const handleDeleteLocation = async (locationId) => {
+    if (!window.confirm("Are you sure you want to delete this location?"))
+      return;
+    setError("");
+    setSuccess("");
+    try {
+      await axios.delete(
+        `https://tamarmyaybackend-last.onrender.com/api/locations/${locationId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setLocations((prev) => prev.filter((loc) => loc.id !== locationId));
+      setSuccess("Location deleted successfully!");
+    } catch (err) {
+      console.error(
+        "Error deleting location:",
+        err.response?.data || err.message
+      );
+      setError(err.response?.data?.error || "Failed to delete location");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditLocationId(null);
+    setEditBuildingName("");
+  };
+
   return (
-    <div>
-      <h2>Manage Locations</h2>
-      {error && <p className="error">{error}</p>}
-      <form onSubmit={handleAddLocation}>
-        <input
-          type="text"
-          placeholder="Building Name"
-          value={newLocation}
-          onChange={(e) => setNewLocation(e.target.value)}
-          required
-        />
-        <button type="submit">Add Location</button>
-      </form>
-      <table>
-        <thead>
-          <tr>
-            <th>Building Name</th>
-          </tr>
-        </thead>
-        <tbody>
-          {locations.map(loc => (
-            <tr key={loc.id}>
-              <td>{loc.buildingName}</td>
+    <div className="p-4">
+      <h2 className="text-2xl font-bold mb-4">
+        {mode === "add" && "Add Location"}
+        {mode === "edit" && "Edit Location"}
+        {mode === "delete" && "Delete Location"}
+      </h2>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+      {success && <p className="text-green-500 mb-4">{success}</p>}
+
+      {/* Add Location Form */}
+      {mode === "add" && (
+        <form onSubmit={handleAddLocation} className="mb-6 flex gap-4">
+          <input
+            type="text"
+            placeholder="Building Name"
+            value={newLocation}
+            onChange={(e) => setNewLocation(e.target.value)}
+            required
+            className="p-2 border rounded flex-grow"
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 bg-[#DCC99B] text-black rounded hover:bg-[#DCC99B]/80"
+          >
+            Add Location
+          </button>
+        </form>
+      )}
+
+      {/* Edit Location Form */}
+      {mode === "edit" && (
+        <>
+          {editLocationId ? (
+            <form onSubmit={handleUpdateLocation} className="mb-6 flex gap-4">
+              <input
+                type="text"
+                value={editBuildingName}
+                onChange={(e) => setEditBuildingName(e.target.value)}
+                required
+                className="p-2 border rounded flex-grow"
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 bg-[#DCC99B] text-black rounded hover:bg-[#DCC99B]/80"
+              >
+                Update Location
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </form>
+          ) : (
+            <p className="mb-4">
+              Select a location to edit from the table below.
+            </p>
+          )}
+        </>
+      )}
+
+      {/* Locations Table */}
+      {(mode === "edit" || mode === "delete") && (
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-[#FFFCF1]">
+              <th className="p-2 border">Building Name</th>
+              <th className="p-2 border">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {locations.map((loc) => (
+              <tr key={loc.id} className="border">
+                <td className="p-2">{loc.buildingName}</td>
+                <td className="p-2 flex gap-2">
+                  {mode === "edit" && (
+                    <button
+                      onClick={() => handleEditLocation(loc)}
+                      className="px-2 py-1 bg-[#DCC99B] text-black rounded hover:bg-[#DCC99B]/80"
+                    >
+                      Edit
+                    </button>
+                  )}
+                  {mode === "delete" && (
+                    <button
+                      onClick={() => handleDeleteLocation(loc.id)}
+                      className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }

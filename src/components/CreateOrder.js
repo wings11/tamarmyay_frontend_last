@@ -1,51 +1,31 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import CategoryNavbar from "./CategoryNavbar";
-import FoodItems from "./FoodItems";
-import OrderItems from "./OrderItems";
-import CreateOrderButton from "./CreateOrderButton";
 
 function CreateOrder({ token }) {
-  const [foodItems, setFoodItems] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [orderItems, setOrderItems] = useState([]);
   const [orderType, setOrderType] = useState("");
   const [tableNumber, setTableNumber] = useState("");
   const [buildingName, setBuildingName] = useState("");
   const [customerName, setCustomerName] = useState("");
-  const [tables, setTables] = useState([]);
   const [locations, setLocations] = useState([]);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
 
+  const navigate = useNavigate();
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-  // Fetch tables, locations, and categories on mount
+  // Fetch locations on mount
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        // Fetch tables
-        const tablesRes = await axios.get(`${API_URL}/api/tables`);
-        setTables(tablesRes.data);
-
-        // Fetch locations
         const locationsRes = await axios.get(`${API_URL}/api/locations`);
         setLocations(locationsRes.data);
-
-        // Fetch categories
-        const categoriesRes = await axios.get(
-          `${API_URL}/api/items/categories`
-        );
-        setCategories(categoriesRes.data);
-        setSelectedCategory(categoriesRes.data[0] || "");
       } catch (err) {
         console.error(
-          "Error fetching initial data:",
+          "Error fetching locations:",
           err.response?.data || err.message
         );
-        setError("Failed to load data");
+        setError("Failed to load locations");
       }
     };
     fetchInitialData();
@@ -56,99 +36,19 @@ function CreateOrder({ token }) {
     const isValid =
       orderType && (orderType === "dine-in" ? tableNumber : buildingName);
     setIsFormValid(isValid);
-  }, [orderType, tableNumber, buildingName, customerName]);
+  }, [orderType, tableNumber, buildingName]);
 
-  // Fetch food items when selectedCategory changes
-  useEffect(() => {
-    const fetchFoodItems = async () => {
-      try {
-        const url = selectedCategory
-          ? `${API_URL}/api/items/category/${encodeURIComponent(
-              selectedCategory
-            )}`
-          : `${API_URL}/api/items`;
-        const res = await axios.get(url);
-        setFoodItems(res.data);
-      } catch (err) {
-        console.error(
-          "Error fetching food items:",
-          err.response?.data || err.message
-        );
-        setError("Failed to load food items");
-      }
-    };
-    if (selectedCategory && isFormValid) {
-      fetchFoodItems();
-    }
-  }, [selectedCategory, isFormValid, API_URL]);
-
-  const handleAddItem = (foodItem) => {
-    setOrderItems((prev) => {
-      const existing = prev.find((item) => item.foodItem.id === foodItem.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.foodItem.id === foodItem.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      }
-      return [...prev, { foodItem, quantity: 1 }];
-    });
-  };
-
-  const handleRemoveItem = (foodItemId) => {
-    setOrderItems((prev) =>
-      prev.filter((item) => item.foodItem.id !== foodItemId)
-    );
-  };
-
-  const handleQuantityChange = (foodItemId, quantity) => {
-    setOrderItems((prev) =>
-      prev.map((item) =>
-        item.foodItem.id === foodItemId
-          ? { ...item, quantity: parseInt(quantity) }
-          : item
-      )
-    );
-  };
-
-  const handleSubmit = async (e) => {
+  // Handle Confirm button click
+  const handleConfirm = (e) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
     if (!isFormValid) {
       setError("Please fill all required fields");
       return;
     }
-    if (orderItems.length === 0) {
-      setError("Please add at least one item to the order");
-      return;
-    }
-    try {
-      await axios.post(
-        `${API_URL}/api/orders`,
-        {
-          orderType,
-          tableNumber: orderType === "dine-in" ? parseInt(tableNumber) : null,
-          buildingName: orderType === "delivery" ? buildingName : null,
-          customerName,
-          items: orderItems,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setSuccess("Order created successfully!");
-      setOrderItems([]);
-      setOrderType("");
-      setTableNumber("");
-      setBuildingName("");
-      setCustomerName("");
-      setSelectedCategory(categories[0] || "");
-      setFoodItems([]);
-      setIsFormValid(false);
-    } catch (err) {
-      console.error("Error creating order:", err.response?.data || err.message);
-      setError(err.response?.data?.error || "Failed to create order");
-    }
+    navigate("/orderpage", {
+      state: { orderType, tableNumber, buildingName, customerName },
+    });
   };
 
   return (
@@ -156,8 +56,8 @@ function CreateOrder({ token }) {
       <img
         src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
         alt="backarrow"
-        className="absolute top-5 right-8 cursor-pointer"
-        onClick={() => window.history.back()}
+        className="absolute top-10 right-10 cursor-pointer"
+        onClick={() => navigate("/")}
       />
       <img
         src="https://res.cloudinary.com/dnoitugnb/image/upload/v1746340828/tmylogo.png"
@@ -165,22 +65,20 @@ function CreateOrder({ token }) {
         className="w-full md:max-w-[500px] mt-20"
       />
       {error && <p className="error">{error}</p>}
-      {success && <p className="success">{success}</p>}
 
-      <form onSubmit={handleSubmit}>
-        {/* Order Type Buttons (both always visible) */}
-        <div className="mb-4 flex gap-4">
-          <span className="px-4 py-2 text-black text-center text-xl not-italic font-bold ">
-            {" "}
+      <form onSubmit={handleConfirm} className="w-full md:max-w-[500px] mt-5">
+        {/* Order Type Buttons */}
+        <div className="w-full bg-[#FFFCF1] py-4 -translate-x-1/4 flex gap-20 items-center justify-center">
+          <span className="px-4 py-2 text-black text-center text-lg not-italic font-bold whitespace-nowrap">
             Select Order Type:
           </span>
           <button
             type="button"
             onClick={() => setOrderType("dine-in")}
-            className={`px-4 py-2 rounded-[20px] border border-gray-500 text-black text-center text-xl not-italic font-bold transition-all duration-200 ${
+            className={`px-8 py-4 whitespace-nowrap rounded-[20px] border border-gray-200 text-lg font-bold transition-all duration-200 ${
               orderType === "dine-in"
-                ? "bg-[#FFF9E3] text-green border-gray-700 shadow-md"
-                : "bg-[#FFF9E3] text-black border-gray-500 hover:bg-gray-300/90"
+                ? "bg-[#e4d4af] !important text-black border-gray-700 shadow-md"
+                : "bg-[#FFFCF1] text-black border-gray-500 hover:bg-[#ede7d3]"
             }`}
           >
             Dine-In
@@ -188,82 +86,86 @@ function CreateOrder({ token }) {
           <button
             type="button"
             onClick={() => setOrderType("delivery")}
-            className={`px-4 py-2 rounded-[20px] border border-gray-500 text-black text-center text-xl not-italic font-bold transition-all duration-200 ${
+            className={`px-8 py-4 rounded-[20px] border border-gray-200 text-lg font-bold transition-all duration-200 ${
               orderType === "delivery"
-                ? "bg-[#FFF9E3] text-white border-gray-700 shadow-md"
-                : "bg-[#FFF9E3] text-black border-gray-500 hover:bg-gray-300/90"
+                ? "bg-[#e4d4af] !important text-black border-gray-700 shadow-md"
+                : "bg-[#FFFCF1] text-black border-gray-500 hover:bg-[#ede7d3]"
             }`}
           >
             Delivery
           </button>
         </div>
 
-        {/* Table Selection as Buttons (visible only for Dine-In) */}
+        {/* Table Selection for Dine-In */}
         {orderType === "dine-in" && (
-          <div className="mb-4 flex flex-wrap gap-2">
-            {tables.map((table) => (
-              <button
-                key={table.id}
-                type="button"
-                onClick={() => setTableNumber(table.tableNumber)}
-                className={`px-4 py-2 rounded-[20px] border border-gray-500 ${
-                  tableNumber === table.tableNumber
-                    ? "bg-gray-300 text-white"
-                    : "bg-gray-200/50 text-black"
-                } font-nunito text-lg`}
-              >
-                Table {table.tableNumber}
-              </button>
-            ))}
+          <div className="mt-4">
+            <p className="px-4 py-2 text-black text-sm font-medium ml-10">
+              Table Selection:
+            </p>
+            <div className="grid grid-cols-5 gap-2 mt-2">
+              {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  onClick={() => setTableNumber(num)}
+                  className={`px-4 py-2 rounded-full border border-gray-500 font-nunito text-sm transition-all duration-200 ${
+                    tableNumber === num
+                      ? "bg-[#e4d4af] !important text-black border-gray-700"
+                      : "bg-[#FFFCF1] text-black border-gray-500 hover:bg-[#ede7d3]"
+                  }`}
+                >
+                  Table {num}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Delivery Fields (visible only for Delivery) */}
+        {/* Delivery Fields */}
         {orderType === "delivery" && (
-          <div>
-            <label>Building Name:</label>
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            <label className="block text-lg font-medium mb-1 whitespace-nowrap">
+              Building Name:
+            </label>
             <input
               type="text"
               list="buildingNames"
               value={buildingName}
               onChange={(e) => setBuildingName(e.target.value)}
               required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md mb-4"
             />
             <datalist id="buildingNames">
               {locations.map((location) => (
                 <option key={location.id} value={location.buildingName} />
               ))}
             </datalist>
-            <div>
-              <label>Customer Name:</label>
-              <input
-                type="text"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                required
-              />
-            </div>
+            <label className="block text-lg font-medium mb-1 whitespace-nowrap">
+              Customer Name:
+            </label>
+            <input
+              type="text"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
           </div>
         )}
 
-        <CategoryNavbar
-          categories={categories}
-          selectedCategory={selectedCategory}
-          isFormValid={isFormValid}
-          setSelectedCategory={setSelectedCategory}
-        />
-        <FoodItems
-          foodItems={foodItems}
-          selectedCategory={selectedCategory}
-          isFormValid={isFormValid}
-          handleAddItem={handleAddItem}
-        />
-        <OrderItems
-          orderItems={orderItems}
-          handleRemoveItem={handleRemoveItem}
-          handleQuantityChange={handleQuantityChange}
-        />
-        <CreateOrderButton isFormValid={isFormValid} orderItems={orderItems} />
+        {/* Confirm Button */}
+        <button
+          type="submit"
+          disabled={!isFormValid}
+          className={`mt-10 px-6 py-3 rounded-full text-black font-bold transition-all duration-200  absolute  left-1/2 transform -translate-x-1/2 ${
+            isFormValid
+              ? "bg-[#e4d4af] hover:bg-[#ede7d3]"
+              : "bg-gray-200 cursor-not-allowed"
+          }`}
+          style={{ opacity: isFormValid ? 1 : 0.6 }}
+        >
+          Confirm
+        </button>
       </form>
     </div>
   );

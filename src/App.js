@@ -8,15 +8,20 @@ import {
 import Login from "./components/Login";
 import HomePage from "./pages/HomePage";
 import CreateOrder from "./components/CreateOrder";
+import OrderPage from "./pages/OrderPage";
+import CheckOrder from "./pages/CheckOrder";
 import Checkout from "./components/Checkout";
+import Invoice from "./components/Invoice";
 import OrderHistory from "./components/OrderHistory";
 import SalesReport from "./components/SalesReport";
 import ManageItems from "./components/ManageItems";
 import ManageLocations from "./components/ManageLocations";
+import ManageItemsAndLocationsPage from "./pages/ManageItemsAndLocationsPage";
 import "./styles.css";
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
+  const [orderItems, setOrderItems] = useState([]); // Global orderItems state
 
   const handleLogin = (newToken) => {
     setToken(newToken);
@@ -28,13 +33,12 @@ function App() {
     localStorage.removeItem("token");
   };
 
+  const resetOrderItems = () => {
+    setOrderItems([]); // Clear orderItems after submission
+  };
+
   return (
-    <Router
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
+    <Router>
       <Routes>
         <Route
           path="/login"
@@ -59,10 +63,43 @@ function App() {
           }
         />
         <Route
+          path="/orderpage"
+          element={
+            token ? (
+              <OrderPage
+                token={token}
+                orderItems={orderItems}
+                setOrderItems={setOrderItems}
+              />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/orderpage/checkorder"
+          element={
+            token ? (
+              <CheckOrder
+                token={token}
+                orderItems={orderItems}
+                setOrderItems={setOrderItems}
+                resetOrderItems={resetOrderItems}
+              />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
           path="/checkout"
           element={
             token ? <Checkout token={token} /> : <Navigate to="/login" />
           }
+        />
+        <Route
+          path="/invoice"
+          element={token ? <Invoice token={token} /> : <Navigate to="/login" />}
         />
         <Route
           path="/history"
@@ -77,13 +114,19 @@ function App() {
           }
         />
         <Route
-          path="/items"
+          path="/management"
+          element={
+            token ? <ManageItemsAndLocationsPage /> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/management/items"
           element={
             token ? <ManageItems token={token} /> : <Navigate to="/login" />
           }
         />
         <Route
-          path="/locations"
+          path="/management/locations"
           element={
             token ? <ManageLocations token={token} /> : <Navigate to="/login" />
           }

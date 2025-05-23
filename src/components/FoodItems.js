@@ -4,41 +4,42 @@ function FoodItems({
   foodItems,
   selectedCategory,
   isFormValid,
-  handleAddItem,
+  orderItems,
+  setOrderItems,
 }) {
+  const handleItemClick = (foodItem) => {
+    setOrderItems((prev) => {
+      const existing = prev.find((item) => item.foodItem.id === foodItem.id);
+      if (existing) {
+        // Remove the item if already selected
+        return prev.filter((item) => item.foodItem.id !== foodItem.id);
+      }
+      // Add the item with quantity 1 if not selected
+      return [...prev, { foodItem, quantity: 1 }];
+    });
+  };
+
   return (
-    <div style={{ marginBottom: "20px", opacity: isFormValid ? 1 : 0.5 }}>
-      <h3>Menu ({selectedCategory || "All"})</h3>
+    <div className={`mb-5 ${isFormValid ? "opacity-100" : "opacity-50"}`}>
       {foodItems.length === 0 && isFormValid ? (
         <p>No items available</p>
       ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-            gap: "10px",
-          }}
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-10">
           {foodItems.map((item) => (
             <div
               key={item.id}
-              style={{
-                border: "1px solid #ddd",
-                padding: "10px",
-                borderRadius: "5px",
-              }}
+              className={`border rounded-[30px] border-gray-500 w-[140px] h-[90px] rounded-md cursor-pointer transition-colors grid place-items-center shadow-md ${
+                orderItems.some(
+                  (orderItem) => orderItem.foodItem.id === item.id
+                )
+                  ? "bg-[#e4d4af] text-black border-gray-700"
+                  : "bg-transparent hover:bg-gray-100"
+              }`}
+              onClick={() => isFormValid && handleItemClick(item)}
             >
-              <h4>{item.name}</h4>
-              <p>Price: ${item.price}</p>
+              <h4 className="text-md font-medium">{item.name}</h4>
+              <p>Price: {item.price} ฿</p>
               <p>{item.description}</p>
-              <button
-                className="btnbtn"
-                type="button"
-                onClick={() => handleAddItem(item)}
-                disabled={!isFormValid}
-              >
-                Add to Order
-              </button>
             </div>
           ))}
         </div>
