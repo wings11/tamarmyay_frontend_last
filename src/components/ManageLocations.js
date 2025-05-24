@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-function ManageLocations({ token, mode }) {
+function ManageLocations({ token, mode, onComplete }) {
   const [locations, setLocations] = useState([]);
   const [newLocation, setNewLocation] = useState("");
   const [editLocationId, setEditLocationId] = useState(null);
@@ -28,6 +28,19 @@ function ManageLocations({ token, mode }) {
     fetchLocations();
   }, [token]);
 
+  const resetForm = () => {
+    setNewLocation("");
+    setEditLocationId(null);
+    setEditBuildingName("");
+    setError("");
+    setSuccess("");
+  };
+
+  const handleCancel = () => {
+    resetForm();
+    onComplete(); // Close modal
+  };
+
   const handleAddLocation = async (e) => {
     e.preventDefault();
     setError("");
@@ -39,8 +52,9 @@ function ManageLocations({ token, mode }) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setLocations([...locations, res.data]);
-      setNewLocation("");
       setSuccess("Location added successfully!");
+      resetForm();
+      onComplete(); // Close modal
     } catch (err) {
       console.error(
         "Error adding location:",
@@ -72,9 +86,9 @@ function ManageLocations({ token, mode }) {
             : loc
         )
       );
-      setEditLocationId(null);
-      setEditBuildingName("");
       setSuccess("Location updated successfully!");
+      resetForm();
+      onComplete(); // Close modal
     } catch (err) {
       console.error(
         "Error updating location:",
@@ -96,6 +110,8 @@ function ManageLocations({ token, mode }) {
       );
       setLocations((prev) => prev.filter((loc) => loc.id !== locationId));
       setSuccess("Location deleted successfully!");
+      resetForm();
+      onComplete(); // Close modal
     } catch (err) {
       console.error(
         "Error deleting location:",
@@ -105,38 +121,47 @@ function ManageLocations({ token, mode }) {
     }
   };
 
-  const handleCancelEdit = () => {
-    setEditLocationId(null);
-    setEditBuildingName("");
-  };
-
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">
+      {/* <h2 className="text-2xl font-bold mb-4">
         {mode === "add" && "Add Location"}
         {mode === "edit" && "Edit Location"}
         {mode === "delete" && "Delete Location"}
-      </h2>
+      </h2> */}
       {error && <p className="text-red-500 mb-4">{error}</p>}
       {success && <p className="text-green-500 mb-4">{success}</p>}
 
       {/* Add Location Form */}
       {mode === "add" && (
-        <form onSubmit={handleAddLocation} className="mb-6 flex gap-4">
-          <input
-            type="text"
-            placeholder="Building Name"
-            value={newLocation}
-            onChange={(e) => setNewLocation(e.target.value)}
-            required
-            className="p-2 border rounded flex-grow"
-          />
-          <button
-            type="submit"
-            className="px-4 py-2 bg-[#DCC99B] text-black rounded hover:bg-[#DCC99B]/80"
-          >
-            Add Location
-          </button>
+        <form onSubmit={handleAddLocation} className="space-y-4 ">
+          <div className="flex flex-row justify-between">
+            <label className="block font-medium flex items-center h-[51px]">
+              Building Name:
+            </label>
+            <input
+              type="text"
+              placeholder="Building Name"
+              value={newLocation}
+              onChange={(e) => setNewLocation(e.target.value)}
+              required
+              className="w-full p-2 border rounded w-[418px] h-[51px]"
+            />
+          </div>
+          <div className="flex flex-col items-center gap-4   ">
+            <button
+              type="submit"
+              className="px-4 py-2 bg-[#DCC99B]/50 text-black rounded hover:bg-[#DCC99B]/80"
+            >
+              Add Location
+            </button>
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="px-4 py-2 bg-[#DCC99B]/50 text-black rounded hover:bg-[#DCC99B]/80"
+            >
+              Cancel
+            </button>
+          </div>
         </form>
       )}
 
@@ -144,27 +169,34 @@ function ManageLocations({ token, mode }) {
       {mode === "edit" && (
         <>
           {editLocationId ? (
-            <form onSubmit={handleUpdateLocation} className="mb-6 flex gap-4">
-              <input
-                type="text"
-                value={editBuildingName}
-                onChange={(e) => setEditBuildingName(e.target.value)}
-                required
-                className="p-2 border rounded flex-grow"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 bg-[#DCC99B] text-black rounded hover:bg-[#DCC99B]/80"
-              >
-                Update Location
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelEdit}
-                className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
-              >
-                Cancel
-              </button>
+            <form onSubmit={handleUpdateLocation} className="space-y-4 ">
+              <div className="flex flex-row justify-between">
+                <label className="block font-medium flex items-center h-[51px]">
+                  Building Name:
+                </label>
+                <input
+                  type="text"
+                  value={editBuildingName}
+                  onChange={(e) => setEditBuildingName(e.target.value)}
+                  required
+                  className="w-full p-2 border rounded w-[418px] h-[51px]"
+                />
+              </div>
+              <div className="flex flex-col items-center gap-4    ">
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-[#DCC99B]/50 text-black rounded hover:bg-[#DCC99B]/80"
+                >
+                  Update Location
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="px-4 py-2 bg-[#DCC99B]/50 text-black rounded hover:bg-[#DCC99B]/80"
+                >
+                  Cancel
+                </button>
+              </div>
             </form>
           ) : (
             <p className="mb-4">
@@ -187,11 +219,11 @@ function ManageLocations({ token, mode }) {
             {locations.map((loc) => (
               <tr key={loc.id} className="border">
                 <td className="p-2">{loc.buildingName}</td>
-                <td className="p-2 flex gap-2">
+                <td className="p-2 flex gap-2 ">
                   {mode === "edit" && (
                     <button
                       onClick={() => handleEditLocation(loc)}
-                      className="px-2 py-1 bg-[#DCC99B] text-black rounded hover:bg-[#DCC99B]/80"
+                      className="px-2 py-1 bg-[#DCC99B]/50 text-black rounded hover:bg-[#DCC99B]/80"
                     >
                       Edit
                     </button>

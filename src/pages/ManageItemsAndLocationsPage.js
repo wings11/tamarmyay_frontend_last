@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import AddFoodItem from "../components/ManageItems";
 import ManageLocations from "../components/ManageLocations";
 
 function ManageItemsAndLocationsPage({ token }) {
   const [itemsDropdownOpen, setItemsDropdownOpen] = useState(false);
   const [locationsDropdownOpen, setLocationsDropdownOpen] = useState(false);
-  const [selectedOption, setSelectedOption] = useState(null); // Tracks 'items-add', 'items-edit', 'items-delete', 'locations-add', 'locations-edit', 'locations-delete'
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [showAlert, setShowAlert] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     console.log(
@@ -16,19 +19,80 @@ function ManageItemsAndLocationsPage({ token }) {
 
   const toggleItemsDropdown = () => {
     setItemsDropdownOpen(!itemsDropdownOpen);
-    setLocationsDropdownOpen(false); // Close other dropdown
+    setLocationsDropdownOpen(false);
   };
 
   const toggleLocationsDropdown = () => {
     setLocationsDropdownOpen(!locationsDropdownOpen);
-    setItemsDropdownOpen(false); // Close other dropdown
+    setItemsDropdownOpen(false);
   };
 
   const handleOptionSelect = (option) => {
     setSelectedOption(option);
+    setShowAlert(true);
     setItemsDropdownOpen(false);
     setLocationsDropdownOpen(false);
     console.log("Selected option:", option);
+  };
+
+  const handleBack = () => {
+    navigate(-1);
+  };
+
+  const handleModalClose = () => {
+    setShowAlert(false);
+    setSelectedOption(null);
+  };
+
+  const getModalContent = () => {
+    switch (selectedOption) {
+      case "items-add":
+        return (
+          <AddFoodItem token={token} mode="add" onComplete={handleModalClose} />
+        );
+      case "items-edit":
+        return (
+          <AddFoodItem
+            token={token}
+            mode="edit"
+            onComplete={handleModalClose}
+          />
+        );
+      case "items-delete":
+        return (
+          <AddFoodItem
+            token={token}
+            mode="delete"
+            onComplete={handleModalClose}
+          />
+        );
+      case "locations-add":
+        return (
+          <ManageLocations
+            token={token}
+            mode="add"
+            onComplete={handleModalClose}
+          />
+        );
+      case "locations-edit":
+        return (
+          <ManageLocations
+            token={token}
+            mode="edit"
+            onComplete={handleModalClose}
+          />
+        );
+      case "locations-delete":
+        return (
+          <ManageLocations
+            token={token}
+            mode="delete"
+            onComplete={handleModalClose}
+          />
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -39,12 +103,18 @@ function ManageItemsAndLocationsPage({ token }) {
         className="w-full md:max-w-[500px] absolute top-8 sm:top-[100px]"
         onError={() => console.error("Failed to load logo image")}
       />
-      <div className="w-full bg-[#FFFCF1] flex gap-20 items-center justify-center mt-72 ">
+      <img
+        src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
+        alt="backarrow"
+        className="cursor-pointer absolute top-10 right-10"
+        onClick={handleBack}
+        onError={() => console.error("Failed to load back arrow image")}
+      />
+      <div className="w-full bg-[#FFFCF1] flex gap-20 items-center justify-center mt-72">
         <h2 className="text-black text-center text-lg not-italic font-bold whitespace-nowrap">
           Select Management Setting:
         </h2>
         <div className="flex flex-row gap-20">
-          {/* Manage Items Button with Dropdown */}
           <div className="relative">
             <button
               onClick={toggleItemsDropdown}
@@ -75,8 +145,6 @@ function ManageItemsAndLocationsPage({ token }) {
               </div>
             )}
           </div>
-
-          {/* Manage Locations Button with Dropdown */}
           <div className="relative">
             <button
               onClick={toggleLocationsDropdown}
@@ -85,7 +153,7 @@ function ManageItemsAndLocationsPage({ token }) {
               Manage Locations
             </button>
             {locationsDropdownOpen && (
-              <div className="absolute top-16 left-0 w-[288px] bg-[#FFFCF1] border border-gray-600 rounded shadow-lg z-10">
+              <div className="absolute top-16 left-0 w-[418px] bg-[#FFFCF1] border border-gray-600 rounded shadow-lg z-10">
                 <button
                   onClick={() => handleOptionSelect("locations-add")}
                   className="block w-full text-left px-4 py-2 text-black font-nunito text-lg hover:bg-[#DCC99B]/50"
@@ -109,28 +177,13 @@ function ManageItemsAndLocationsPage({ token }) {
           </div>
         </div>
       </div>
-
-      {/* Conditionally Render Components */}
-      <div className="w-full max-w-4xl mt-8">
-        {selectedOption === "items-add" && (
-          <AddFoodItem token={token} mode="add" />
-        )}
-        {selectedOption === "items-edit" && (
-          <AddFoodItem token={token} mode="edit" />
-        )}
-        {selectedOption === "items-delete" && (
-          <AddFoodItem token={token} mode="delete" />
-        )}
-        {selectedOption === "locations-add" && (
-          <ManageLocations token={token} mode="add" />
-        )}
-        {selectedOption === "locations-edit" && (
-          <ManageLocations token={token} mode="edit" />
-        )}
-        {selectedOption === "locations-delete" && (
-          <ManageLocations token={token} mode="delete" />
-        )}
-      </div>
+      {showAlert && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[#FFFCF1] rounded-lg shadow-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            {getModalContent()}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

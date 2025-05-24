@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-function AddFoodItem({ token, mode }) {
+function AddFoodItem({ token, mode, onComplete }) {
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
@@ -54,6 +54,21 @@ function AddFoodItem({ token, mode }) {
     }
   };
 
+  const resetForm = () => {
+    setSelectedItemId("");
+    setName("");
+    setCategory(categories[0] || "");
+    setPrice("");
+    setDescription("");
+    setError("");
+    setSuccess("");
+  };
+
+  const handleCancel = () => {
+    resetForm();
+    onComplete(); // Close modal
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -73,11 +88,8 @@ function AddFoodItem({ token, mode }) {
         setFoodItems((prev) =>
           prev.filter((item) => item.id !== selectedItemId)
         );
-        setSelectedItemId("");
-        setName("");
-        setCategory(categories[0] || "");
-        setPrice("");
-        setDescription("");
+        resetForm();
+        onComplete(); // Close modal
       } catch (err) {
         console.error(
           "Error deleting food item:",
@@ -121,11 +133,8 @@ function AddFoodItem({ token, mode }) {
         return;
       }
 
-      setSelectedItemId("");
-      setName("");
-      setCategory(categories[0] || "");
-      setPrice("");
-      setDescription("");
+      resetForm();
+      onComplete(); // Close modal
     } catch (err) {
       console.error(
         "Error saving food item:",
@@ -137,21 +146,23 @@ function AddFoodItem({ token, mode }) {
 
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">
+      {/* <h2 className="text-2xl font-bold mb-4">
         {mode === "add" && "Add Food Item"}
         {mode === "edit" && "Edit Food Item"}
         {mode === "delete" && "Delete Food Item"}
-      </h2>
+      </h2> */}
       {error && <p className="text-red-500 mb-4">{error}</p>}
       {success && <p className="text-green-500 mb-4">{success}</p>}
       <form onSubmit={handleSubmit} className="space-y-4">
         {(mode === "edit" || mode === "delete") && (
-          <div>
-            <label className="block font-medium">Select Item:</label>
+          <div className="flex flex-row justify-between">
+            <label className="block font-medium flex items-center h-[51px] whitespace-nowrap">
+              Select Item:
+            </label>
             <select
               value={selectedItemId}
               onChange={(e) => handleSelectItem(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded w-[418px] h-[51px]"
               required={mode === "delete" || mode === "edit"}
             >
               <option value="">Select Item</option>
@@ -165,23 +176,27 @@ function AddFoodItem({ token, mode }) {
         )}
         {(mode === "add" || (mode === "edit" && selectedItemId)) && (
           <>
-            <div>
-              <label className="block font-medium">Name:</label>
+            <div className="flex flex-row justify-between">
+              <label className="block font-medium flex items-center h-[51px]">
+                Name:
+              </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border rounded w-[418px] h-[51px]"
               />
             </div>
-            <div>
-              <label className="block font-medium">Category:</label>
+            <div className="flex flex-row justify-between">
+              <label className="block font-medium flex items-center h-[51px]">
+                Category:
+              </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 required
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border rounded w-[418px] h-[51px]"
               >
                 <option value="">Select Category</option>
                 {categories.map((cat) => (
@@ -191,35 +206,48 @@ function AddFoodItem({ token, mode }) {
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block font-medium">Price (Baht):</label>
+            <div className="flex flex-row justify-between">
+              <label className="block font-medium flex items-center h-[51px] whitespace-nowrap">
+                Price (Baht):
+              </label>
               <input
                 type="number"
                 step="0.01"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 required
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border rounded w-[418px] h-[51px]"
               />
             </div>
-            <div>
-              <label className="block font-medium">Description:</label>
+            <div className="flex flex-row justify-between">
+              <label className="block font-medium flex items-center h-[51px]">
+                Description:
+              </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border rounded w-[418px] h-[51px]"
               />
             </div>
           </>
         )}
-        <button
-          type="submit"
-          className="px-4 py-2 bg-[#DCC99B] text-black rounded hover:bg-[#DCC99B]/80"
-        >
-          {mode === "add" && "Add Food Item"}
-          {mode === "edit" && "Update Food Item"}
-          {mode === "delete" && "Delete Food Item"}
-        </button>
+        <div className="flex flex-col items-center gap-4">
+          <button
+            type="submit"
+            className="px-4 py-2 bg-[#DCC99B]/50 text-black rounded hover:bg-[#DCC99B]/80"
+          >
+            {mode === "add" && "Add Food Item"}
+            {mode === "edit" && "Update Food Item"}
+            {mode === "delete" && "Delete Food Item"}
+          </button>
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="px-4 py-2 bg-[#DCC99B]/50 text-black rounded hover:bg-[#DCC99B]/80"
+          >
+            Cancel
+          </button>
+        </div>
       </form>
     </div>
   );
