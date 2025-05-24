@@ -162,7 +162,7 @@ function AddFoodItem({ token, mode, onComplete }) {
             <select
               value={selectedItemId}
               onChange={(e) => handleSelectItem(e.target.value)}
-              className="w-full p-2 border rounded w-[418px] h-[51px]"
+              className=" p-2 border rounded w-[418px] h-[51px]"
               required={mode === "delete" || mode === "edit"}
             >
               <option value="">Select Item</option>
@@ -176,7 +176,7 @@ function AddFoodItem({ token, mode, onComplete }) {
         )}
         {(mode === "add" || (mode === "edit" && selectedItemId)) && (
           <>
-            <div className="flex flex-row justify-between">
+            <div className="flex flex-row justify-between ">
               <label className="block font-medium flex items-center h-[51px]">
                 Name:
               </label>
@@ -185,7 +185,7 @@ function AddFoodItem({ token, mode, onComplete }) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full p-2 border rounded w-[418px] h-[51px]"
+                className=" p-2 border rounded w-[418px] h-[51px]"
               />
             </div>
             <div className="flex flex-row justify-between">
@@ -196,7 +196,7 @@ function AddFoodItem({ token, mode, onComplete }) {
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 required
-                className="w-full p-2 border rounded w-[418px] h-[51px]"
+                className="p-2 border rounded w-[418px] h-[51px]"
               >
                 <option value="">Select Category</option>
                 {categories.map((cat) => (
@@ -216,7 +216,7 @@ function AddFoodItem({ token, mode, onComplete }) {
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 required
-                className="w-full p-2 border rounded w-[418px] h-[51px]"
+                className=" p-2 border rounded w-[418px] h-[51px]"
               />
             </div>
             <div className="flex flex-row justify-between">
@@ -226,7 +226,7 @@ function AddFoodItem({ token, mode, onComplete }) {
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full p-2 border rounded w-[418px] h-[51px]"
+                className=" p-2 border rounded w-[418px] h-[51px]"
               />
             </div>
           </>

@@ -144,7 +144,7 @@ function ManageLocations({ token, mode, onComplete }) {
               value={newLocation}
               onChange={(e) => setNewLocation(e.target.value)}
               required
-              className="w-full p-2 border rounded w-[418px] h-[51px]"
+              className=" p-2 border rounded w-[418px] h-[51px]"
             />
           </div>
           <div className="flex flex-col items-center gap-4   ">
@@ -228,6 +228,7 @@ function ManageLocations({ token, mode, onComplete }) {
                       Edit
                     </button>
                   )}
+
                   {mode === "delete" && (
                     <button
                       onClick={() => handleDeleteLocation(loc.id)}
@@ -242,6 +243,15 @@ function ManageLocations({ token, mode, onComplete }) {
           </tbody>
         </table>
       )}
+      <div className="flex justify-center">
+        <button
+          type="button"
+          onClick={handleCancel}
+          className="px-4 py-2 bg-[#DCC99B]/50 text-black rounded hover:bg-[#DCC99B]/80 mt-8 w-[120px] h-10 flex items-center justify-center"
+        >
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }

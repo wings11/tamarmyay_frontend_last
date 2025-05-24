@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -80,7 +77,7 @@ function CheckOrder({ token, orderItems, setOrderItems, resetOrderItems }) {
 
   const handleAlertClose = () => {
     setShowAlert(false);
-    navigate("/invoice", {
+    navigate("/", {
       state: {
         tableNumber,
         orderType,
@@ -124,7 +121,9 @@ function CheckOrder({ token, orderItems, setOrderItems, resetOrderItems }) {
           Check Order
         </h3>
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-        {success && <p className="text-green-500 text-center mb-4">{success}</p>}
+        {success && (
+          <p className="text-green-500 text-center mb-4">{success}</p>
+        )}
         <div className="w-[453px] max-w-2xl p-4 bg-transparent rounded-lg shadow-lg -translate-x-20 mt-6">
           <div className="grid grid-cols-2 gap-4">
             <h3 className="text-black text-center text-lg not-italic font-bold">
@@ -189,7 +188,7 @@ function CheckOrder({ token, orderItems, setOrderItems, resetOrderItems }) {
               onClick={handleAlertClose}
               className="w-[160px] h-[55px] mt-10 bg-[#DCC99B] text-black rounded-[25px] font-semibold hover:bg-[#DCC99B]/80"
             >
-              View Invoice
+              Back to Home
             </button>
           </div>
         )}
