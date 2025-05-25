@@ -141,7 +141,7 @@ function Checkout({ token }) {
         <img
           src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
           alt="backarrow"
-          className="cursor-pointer hidden md:block  absolute top-10 right"
+          className="cursor-pointer hidden md:block absolute top-10 right-10 w-8 h-8 md:w-24 md:h-24"
           onClick={() => (window.location.href = "/")}
         />
         <h2 className="text-xl md:text-3xl font-bold text-center uppercase underline mb-8 md:mb-16 mt-8 md:mt-16">

@@ -8,6 +8,8 @@ function CreateOrder({ token }) {
   const [buildingName, setBuildingName] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [locations, setLocations] = useState([]);
+  const [recentBuildings, setRecentBuildings] = useState([]);
+  const [recentCustomers, setRecentCustomers] = useState([]);
   const [error, setError] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
 
@@ -38,7 +40,7 @@ function CreateOrder({ token }) {
     setIsFormValid(isValid);
   }, [orderType, tableNumber, buildingName]);
 
-  // Handle Confirm button click
+  // Handle Confirm button click and store recent building/customer names
   const handleConfirm = (e) => {
     e.preventDefault();
     setError("");
@@ -46,10 +48,49 @@ function CreateOrder({ token }) {
       setError("Please fill all required fields");
       return;
     }
+
+    // Store recent building name if provided
+    if (buildingName) {
+      setRecentBuildings((prev) => {
+        const updated = [
+          buildingName,
+          ...prev.filter((name) => name !== buildingName),
+        ];
+        return updated.slice(0, 5); // Keep only the 5 most recent
+      });
+    }
+
+    // Store recent customer name if provided
+    if (customerName) {
+      setRecentCustomers((prev) => {
+        const updated = [
+          customerName,
+          ...prev.filter((name) => name !== customerName),
+        ];
+        return updated.slice(0, 5); // Keep only the 5 most recent
+      });
+    }
+
     navigate("/orderpage", {
       state: { orderType, tableNumber, buildingName, customerName },
     });
   };
+
+  // Combine recent buildings and locations for suggestions
+  const buildingSuggestions = [
+    ...recentBuildings,
+    ...locations
+      .map((location) => location.buildingName)
+      .filter((name) => !recentBuildings.includes(name)),
+  ].filter((name) => name.toLowerCase().includes(buildingName.toLowerCase()));
+
+  // Combine recent customers and locations (using buildingName as proxy) for suggestions
+  const customerSuggestions = [
+    ...recentCustomers,
+    ...locations
+      .map((location) => location.buildingName) // Proxy for customer names
+      .filter((name) => !recentCustomers.includes(name)),
+  ].filter((name) => name.toLowerCase().includes(customerName.toLowerCase()));
 
   return (
     <div className="flex flex-row items-start min-h-screen bg-[#F5E8C7]">
@@ -140,7 +181,7 @@ function CreateOrder({ token }) {
 
           {/* Delivery Fields */}
           {orderType === "delivery" && (
-            <div className="mt-4 grid grid-cols-2 gap-4">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <label className="block text-lg font-medium mb-1 whitespace-nowrap">
                 Building Name:
               </label>
@@ -153,8 +194,8 @@ function CreateOrder({ token }) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md mb-4"
               />
               <datalist id="buildingNames">
-                {locations.map((location) => (
-                  <option key={location.id} value={location.buildingName} />
+                {buildingSuggestions.map((name, index) => (
+                  <option key={index} value={name} />
                 ))}
               </datalist>
               <label className="block text-lg font-medium mb-1 whitespace-nowrap">
@@ -167,6 +208,11 @@ function CreateOrder({ token }) {
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               />
+              <datalist id="customerNames">
+                {customerSuggestions.map((name, index) => (
+                  <option key={index} value={name} />
+                ))}
+              </datalist>
             </div>
           )}
 

@@ -44,6 +44,12 @@ function OrderHistory({ token }) {
     fetchOrders();
   };
 
+  const handleClear = () => {
+    setStartDate("");
+    setEndDate("");
+    fetchOrders(); // Refetch with default (no date filters)
+  };
+
   const toggleRow = (orderId) => {
     setExpandedRow(expandedRow === orderId ? null : orderId);
   };
@@ -129,9 +135,9 @@ function OrderHistory({ token }) {
           className="cursor-pointer hidden md:block absolute top-10 right-10 w-8 h-8 md:w-24 md:h-24"
           onClick={() => window.history.back()}
         />
-        <div className="flex justify-center items-center w-full mb-4 sm:mb-6 mt-12 sm:mt-16 md:mt-20">
-          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-center uppercase underline">
-            Check Order
+        <div className="flex justify-center items-center w-full mb-4 sm:mb-6 mt-8 sm:mt-12 md:mt-16">
+          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-center uppercase underline mb-2">
+            Order History
           </h3>
         </div>
         {error && (
@@ -140,39 +146,73 @@ function OrderHistory({ token }) {
           </p>
         )}
         <div className="flex flex-col sm:flex-row items-center sm:items-end justify-end w-full max-w-4xl gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <select
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value);
-              fetchOrders();
-            }}
-            className="w-full sm:w-40 h-10 rounded-[20px] border border-black/30 bg-gray-200/50 p-2 text-sm sm:text-base"
-          >
-            <option value="">All Statuses</option>
-            <option value="In Process">In Process</option>
-            <option value="Completed">Completed</option>
-          </select>
+          <div className="flex flex-col w-full sm:w-auto">
+            <label
+              htmlFor="status"
+              className="text-sm sm:text-base font-medium mb-1 text-gray-700"
+            >
+              Status
+            </label>
+            <select
+              id="status"
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value);
+                fetchOrders();
+              }}
+              className="w-full sm:w-40 h-10 rounded-[20px] border border-black/30 bg-gray-200/50 p-2 text-sm sm:text-base"
+            >
+              <option value="">All Statuses</option>
+              <option value="In Process">In Process</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
           <form
             onSubmit={handleFilter}
             className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto"
           >
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full sm:w-40 h-10 rounded-[20px] border border-black/30 bg-gray-200/50 p-2 text-sm sm:text-base"
-            />
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full sm:w-40 h-10 rounded-[20px] border border-black/30 bg-gray-200/50 p-2 text-sm sm:text-base"
-            />
+            <div className="flex flex-col w-full sm:w-auto">
+              <label
+                htmlFor="startDate"
+                className="text-sm sm:text-base font-medium mb-1 text-gray-700"
+              >
+                Start Date
+              </label>
+              <input
+                id="startDate"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full sm:w-40 h-10 rounded-[20px] border border-black/30 bg-gray-200/50 p-2 text-sm sm:text-base"
+              />
+            </div>
+            <div className="flex flex-col w-full sm:w-auto">
+              <label
+                htmlFor="endDate"
+                className="text-sm sm:text-base font-medium mb-1 text-gray-700"
+              >
+                End Date
+              </label>
+              <input
+                id="endDate"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full sm:w-40 h-10 rounded-[20px] border border-black/30 bg-gray-200/50 p-2 text-sm sm:text-base"
+              />
+            </div>
             <button
               type="submit"
-              className="w-full sm:w-32 h-10 rounded-[20px] border border-gray-500 bg-gray-200/50 text-black font-semibold text-sm sm:text-base hover:bg-gray-300 active:bg-gray-300 active:text-white active:border-none"
+              className="w-full sm:w-32 h-10 rounded-[20px] border border-gray-500 bg-gray-200/50 text-black font-semibold text-sm sm:text-base hover:bg-gray-300 active:bg-gray-300 active:text-white active:border-none mt-[26px]"
             >
               Filter
+            </button>
+            <button
+              type="button"
+              onClick={handleClear}
+              className="w-full sm:w-32 h-10 rounded-[20px] border border-gray-500 bg-gray-200/50 text-black font-semibold text-sm sm:text-base hover:bg-gray-300 active:bg-gray-300 active:text-white active:border-none mt-[26px]"
+            >
+              Clear
             </button>
           </form>
         </div>

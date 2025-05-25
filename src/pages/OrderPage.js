@@ -153,7 +153,7 @@ function OrderPage({ token, orderItems, setOrderItems }) {
         <img
           src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
           alt="backarrow"
-          className="cursor-pointer hidden md:block absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8"
+          className="cursor-pointer hidden md:block absolute top-10 right-10 w-8 h-8 md:w-24 md:h-24"
           onClick={() => navigate("/createorder")}
         />
         <img

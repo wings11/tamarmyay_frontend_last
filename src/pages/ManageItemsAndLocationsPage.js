@@ -106,11 +106,11 @@ function ManageItemsAndLocationsPage({ token }) {
       <img
         src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
         alt="backarrow"
-        className="cursor-pointer w-8 h-8 sm:w-10 sm:h-10 absolute top-4 right-4 sm:top-6 sm:right-6"
+        className="cursor-pointer absolute top-10 right-10 w-8 h-8 md:w-24 md:h-24"
         onClick={handleBack}
         onError={() => console.error("Failed to load back arrow image")}
       />
-      <div className="w-full flex flex-col items-center justify-center mt-16 sm:mt-24 md:mt-32 lg:mt-48">
+      <div className="w-full flex flex-col items-center justify-center mt-16 sm:mt-16 md:mt-24 lg:mt-24 ">
         <div className="flex flex-col min-[820px]:flex-row gap-4 sm:gap-6 md:gap-8 lg:gap-10 w-full max-w-3xl">
           <h2 className="text-black text-center text-base flex items-center justify-center sm:text-lg md:text-xl font-bold font-nunito whitespace-nowrap">
             Select Management Setting:
@@ -118,7 +118,7 @@ function ManageItemsAndLocationsPage({ token }) {
           <div className="relative w-full sm:w-auto">
             <button
               onClick={toggleItemsDropdown}
-              className="flex items-center justify-center w-[288px] mx-auto h-12 sm:h-14 md:h-16 rounded-[25px] border border-gray-600 bg-[#DCC99B] text-black font-nunito text-base sm:text-lg md:text-xl hover:bg-[#DCC99B]/80 active:bg-gray-300 active:text-white hover:text-white/80 active:border-none"
+              className="flex items-center justify-center w-[250px] mx-auto h-12 sm:h-14 md:h-16 rounded-[25px] border border-gray-600 bg-[#DCC99B] text-black font-nunito text-base sm:text-lg md:text-xl hover:bg-[#DCC99B]/80 active:bg-gray-300 active:text-white hover:text-white/80 active:border-none"
             >
               Manage Items
             </button>
@@ -148,7 +148,7 @@ function ManageItemsAndLocationsPage({ token }) {
           <div className="relative w-full sm:w-auto">
             <button
               onClick={toggleLocationsDropdown}
-              className="flex items-center justify-center w-[288px] mx-auto h-12 sm:h-14 md:h-16 rounded-[25px] border border-gray-600 bg-[#DCC99B] text-black font-nunito text-base sm:text-lg md:text-xl hover:bg-[#DCC99B]/80 active:bg-gray-300 active:text-white hover:text-white/80 active:border-none"
+              className="flex items-center justify-center w-[250px] mx-auto h-12 sm:h-14 md:h-16 rounded-[25px] border border-gray-600 bg-[#DCC99B] text-black font-nunito text-base sm:text-lg md:text-xl hover:bg-[#DCC99B]/80 active:bg-gray-300 active:text-white hover:text-white/80 active:border-none"
             >
               Manage Locations
             </button>
