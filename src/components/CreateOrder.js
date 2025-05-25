@@ -22,6 +22,7 @@ function CreateOrder({ token }) {
       try {
         const locationsRes = await axios.get(`${API_URL}/api/locations`);
         setLocations(locationsRes.data);
+        setError("");
       } catch (err) {
         console.error(
           "Error fetching locations:",
@@ -121,7 +122,6 @@ function CreateOrder({ token }) {
             {error}
           </p>
         )}
-
         <form onSubmit={handleConfirm} className="w-full max-w-lg px-4">
           {/* Order Type Buttons */}
           <div className="w-full flex flex-col items-center gap-4 mb-6">

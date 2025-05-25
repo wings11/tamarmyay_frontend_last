@@ -22,6 +22,8 @@ function OrderPage({ token, orderItems, setOrderItems }) {
   const [error, setError] = useState("");
   const [isFormValid] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false); // State for toggling menu
+  const [isCategoriesLoading, setIsCategoriesLoading] = useState(true); // Loading state for categories
+  const [isFoodItemsLoading, setIsFoodItemsLoading] = useState(true); // Loading state for food items
 
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
@@ -37,18 +39,22 @@ function OrderPage({ token, orderItems, setOrderItems }) {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
+        setIsCategoriesLoading(true); // Start loading
         const categoriesRes = await axios.get(
           `${API_URL}/api/items/categories`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setCategories(categoriesRes.data);
         setSelectedCategory(categoriesRes.data[0] || "");
+        setError("");
       } catch (err) {
         console.error(
           "Error fetching categories:",
           err.response?.data || err.message
         );
         setError("Failed to load categories");
+      } finally {
+        setIsCategoriesLoading(false); // End loading
       }
     };
     fetchInitialData();
@@ -58,6 +64,7 @@ function OrderPage({ token, orderItems, setOrderItems }) {
   useEffect(() => {
     const fetchFoodItems = async () => {
       try {
+        setIsFoodItemsLoading(true); // Start loading
         const url = selectedCategory
           ? `${API_URL}/api/items/category/${encodeURIComponent(
               selectedCategory
@@ -67,12 +74,15 @@ function OrderPage({ token, orderItems, setOrderItems }) {
           headers: { Authorization: `Bearer ${token}` },
         });
         setFoodItems(res.data);
+        setError("");
       } catch (err) {
         console.error(
           "Error fetching food items:",
           err.response?.data || err.message
         );
         setError("Failed to load food items");
+      } finally {
+        setIsFoodItemsLoading(false); // End loading
       }
     };
     if (selectedCategory) {
@@ -159,35 +169,47 @@ function OrderPage({ token, orderItems, setOrderItems }) {
         <img
           src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
           alt="forwardarrow"
-          className="cursor-pointer fixed bottom-4 right-4 md:bottom-6 md:right-6 w-8 h-8 transform rotate-180"
+          className="cursor-pointer fixed bottom-10 right-10  w-8 h-8 md:w-24 md:h-24 transform rotate-180"
           onClick={handleForward}
         />
-        <h3 className="text-black text-center text-xl md:text-3xl font-bold uppercase underline my-6 md:my-10">
-          {selectedCategory || "All"}
-        </h3>
-        {error && (
-          <p className="text-red-500 text-center mb-4 text-sm md:text-base">
-            {error}
-          </p>
+        {isCategoriesLoading || isFoodItemsLoading ? (
+          <div className="flex justify-center items-center fixed top-1/4 left-1/2 -translate-x-16  ">
+            <img
+              src="https://res.cloudinary.com/dnoitugnb/image/upload/v1748191424/1qJkhqfzd3_gfgpjf.gif"
+              alt="Loading"
+              className="w-40 h-16  "
+            />
+          </div>
+        ) : (
+          <>
+            <h3 className="text-black text-center text-xl md:text-3xl font-bold uppercase underline my-6 md:my-10">
+              {selectedCategory || "All"}
+            </h3>
+            {error && (
+              <p className="text-red-500 text-center mb-4 text-sm md:text-base">
+                {error}
+              </p>
+            )}
+            <FoodItems
+              foodItems={foodItems}
+              selectedCategory={selectedCategory}
+              isFormValid={isFormValid}
+              orderItems={orderItems}
+              setOrderItems={setOrderItems}
+            />
+            <button
+              onClick={handleCheckOrder}
+              disabled={orderItems.length === 0}
+              className={`mt-4 px-4 py-2 md:px-6 md:py-3 rounded-full text-black font-bold text-sm md:text-base ${
+                orderItems.length > 0
+                  ? "bg-[#E0C9A6] hover:bg-gray-600 hover:text-white"
+                  : "bg-gray-400 cursor-not-allowed"
+              }`}
+            >
+              Check Order
+            </button>
+          </>
         )}
-        <FoodItems
-          foodItems={foodItems}
-          selectedCategory={selectedCategory}
-          isFormValid={isFormValid}
-          orderItems={orderItems}
-          setOrderItems={setOrderItems}
-        />
-        <button
-          onClick={handleCheckOrder}
-          disabled={orderItems.length === 0}
-          className={`mt-4 px-4 py-2 md:px-6 md:py-3 rounded-full text-black font-bold text-sm md:text-base ${
-            orderItems.length > 0
-              ? "bg-[#E0C9A6] hover:bg-gray-600 hover:text-white"
-              : "bg-gray-400 cursor-not-allowed"
-          }`}
-        >
-          Check Order
-        </button>
       </div>
     </div>
   );

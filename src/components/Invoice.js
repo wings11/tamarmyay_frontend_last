@@ -85,7 +85,7 @@ function Invoice({ token }) {
     if (tableNumber || orderId) {
       fetchData();
     }
-  }, [tableNumber, orderType, orderId, token]);
+  }, [tableNumber, orderType, orderId, token, foodItems]); // Added foodItems to dependency array
 
   const handleCheckout = async () => {
     if (!paymentMethod) {

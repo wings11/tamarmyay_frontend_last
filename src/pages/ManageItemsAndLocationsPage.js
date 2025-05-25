@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AddFoodItem from "../components/ManageItems";
 import ManageLocations from "../components/ManageLocations";
@@ -10,12 +10,12 @@ function ManageItemsAndLocationsPage({ token }) {
   const [showAlert, setShowAlert] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    console.log(
-      "ManageItemsAndLocationsPage rendered, selectedOption:",
-      selectedOption
-    );
-  }, [selectedOption]);
+  // useEffect(() => {
+  //   console.log(
+  //     "ManageItemsAndLocationsPage rendered, selectedOption:",
+  //     selectedOption
+  //   );
+  // }, [selectedOption]);
 
   const toggleItemsDropdown = () => {
     setItemsDropdownOpen(!itemsDropdownOpen);
