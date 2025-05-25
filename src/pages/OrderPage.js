@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -24,6 +21,7 @@ function OrderPage({ token, orderItems, setOrderItems }) {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [error, setError] = useState("");
   const [isFormValid] = useState(true);
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // State for toggling menu
 
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
@@ -102,31 +100,76 @@ function OrderPage({ token, orderItems, setOrderItems }) {
     });
   };
 
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
-    <div className="flex flex-row">
-      <CategoryNavbar
-        categories={categories}
-        selectedCategory={selectedCategory}
-        isFormValid={isFormValid}
-        setSelectedCategory={setSelectedCategory}
-      />
-      <div className="bg-[#FFFCF1] w-full min-h-screen flex flex-col items-center">
+    <div className="flex flex-col min-h-screen bg-[#FFFCF1] md:flex-row">
+      {/* Hamburger Menu Icon for Mobile */}
+      <div className="md:hidden flex items-center justify-between p-4  z-20">
+        <i
+          className="bi bi-list text-3xl cursor-pointer"
+          onClick={toggleMenu}
+        ></i>
         <img
           src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
           alt="backarrow"
-          className="cursor-pointer absolute top-10 right-10"
+          className="cursor-pointer w-8 h-8"
+          onClick={() => navigate("/createorder")}
+        />
+      </div>
+
+      {/* Overlay for Mobile */}
+      {isMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-10 md:hidden"
+          onClick={toggleMenu}
+        ></div>
+      )}
+
+      {/* Category Navbar - Slides in/out on mobile */}
+      <div
+        className={`fixed top-0 left-0 w-64 md:w-[145.5px] h-screen bg-[#FFFCF1] border-r-2 border-black z-20 md:z-[1000] transform transition-transform duration-300 ease-in-out  ${
+          isMenuOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0`}
+      >
+        <div className="flex justify-end p-4 md:hidden">
+          <i
+            className="bi bi-x text-3xl cursor-pointer z-20"
+            onClick={toggleMenu}
+          ></i>
+        </div>
+        <CategoryNavbar
+          categories={categories}
+          selectedCategory={selectedCategory}
+          isFormValid={isFormValid}
+          setSelectedCategory={setSelectedCategory}
+        />
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col items-center p-4 md:ml-[25%] lg:ml-[20%] md:p-6">
+        <img
+          src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
+          alt="backarrow"
+          className="cursor-pointer hidden md:block absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8"
           onClick={() => navigate("/createorder")}
         />
         <img
           src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
           alt="forwardarrow"
-          className="cursor-pointer transform fixed bottom-5 right-10 rotate-180"
+          className="cursor-pointer fixed bottom-4 right-4 md:bottom-6 md:right-6 w-8 h-8 transform rotate-180"
           onClick={handleForward}
         />
-        <h3 className="p-20 text-black text-center text-3xl not-italic font-bold uppercase underline">
+        <h3 className="text-black text-center text-xl md:text-3xl font-bold uppercase underline my-6 md:my-10">
           {selectedCategory || "All"}
         </h3>
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+        {error && (
+          <p className="text-red-500 text-center mb-4 text-sm md:text-base">
+            {error}
+          </p>
+        )}
         <FoodItems
           foodItems={foodItems}
           selectedCategory={selectedCategory}
@@ -137,7 +180,7 @@ function OrderPage({ token, orderItems, setOrderItems }) {
         <button
           onClick={handleCheckOrder}
           disabled={orderItems.length === 0}
-          className={`mt-4 px-6 py-2 rounded-[20px] text-black font-bold ${
+          className={`mt-4 px-4 py-2 md:px-6 md:py-3 rounded-full text-black font-bold text-sm md:text-base ${
             orderItems.length > 0
               ? "bg-[#E0C9A6] hover:bg-gray-600 hover:text-white"
               : "bg-gray-400 cursor-not-allowed"
