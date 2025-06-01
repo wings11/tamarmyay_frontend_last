@@ -69,6 +69,12 @@ function SalesReport({ token = "your-auth-token" }) {
     fetchReport();
   };
 
+  const handleClear = () => {
+    setStartDate("");
+    setEndDate("");
+    fetchReport(); // Refetch with default (no date filters)
+  };
+
   // Safely handle totalRevenue
   const safeTotalRevenue = report?.totalRevenue
     ? typeof report.totalRevenue === "number"
@@ -169,25 +175,50 @@ function SalesReport({ token = "your-auth-token" }) {
           {error && <p className="text-red-500 text-center mb-4">{error}</p>}
           <form
             onSubmit={handleFilter}
-            className="flex flex-wrap gap-3 mb-6 w-full max-w-lg justify-center"
+            className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mb-4"
           >
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="h-10 rounded-[20px] border border-black/30 bg-gray-200/50 p-2 text-base md:text-lg flex-1 min-w-[150px]"
-            />
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="h-10 rounded-[20px] border border-black/30 bg-gray-200/50 p-2 text-base md:text-lg flex-1 min-w-[150px]"
-            />
+            <div className="flex flex-col w-full sm:w-auto">
+              <label
+                htmlFor="startDate"
+                className="text-sm md:text-base font-medium mb-1 text-gray-700"
+              >
+                Start Date
+              </label>
+              <input
+                id="startDate"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="h-10 rounded-[20px] border border-black/30 bg-gray-200/50 p-2 text-base md:text-lg flex-1 min-w-[150px]"
+              />
+            </div>
+            <div className="flex flex-col w-full sm:w-auto">
+              <label
+                htmlFor="endDate"
+                className="text-sm md:text-base font-medium mb-1 text-gray-700"
+              >
+                End Date
+              </label>
+              <input
+                id="endDate"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="h-10 rounded-[20px] border border-black/30 bg-gray-200/50 p-2 text-base md:text-lg flex-1 min-w-[150px]"
+              />
+            </div>
             <button
               type="submit"
-              className="w-[120px] h-10 rounded-[20px] border border-gray-500 bg-gray-200/50 text-black font-semibold text-base md:text-lg hover:bg-gray-300 active:bg-gray-300 active:text-white active:border-none"
+              className="w-[120px] h-10 rounded-[20px] border border-gray-500 bg-gray-200/50 text-black font-semibold text-base md:text-lg hover:bg-gray-300 active:bg-gray-300 active:text-white active:border-none mt-[28px] "
             >
               Filter
+            </button>
+            <button
+              type="button"
+              onClick={handleClear}
+              className="w-[120px] h-10 rounded-[20px] border border-gray-500 bg-gray-200/50 text-black font-semibold text-base md:text-lg hover:bg-gray-300 active:bg-gray-300 active:text-white active:border-none mt-[28px] "
+            >
+              Clear
             </button>
           </form>
           {report && (

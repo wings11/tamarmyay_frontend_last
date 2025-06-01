@@ -1,11 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
 function HomePage({ onLogout }) {
-  const handleLogout = () => {
-    if (window.confirm("Are you sure you want to log out?")) {
-      onLogout();
-    }
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutModal(false);
+    onLogout();
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   return (
@@ -54,14 +63,37 @@ function HomePage({ onLogout }) {
         >
           Manage Items & Locations
         </Link>
-        <Link
-          to="/login"
-          onClick={handleLogout}
+        <button
+          onClick={handleLogoutClick}
           className="flex items-center justify-center w-[288px] h-16 rounded-[25px] border border-gray-600 bg-[#DCC99B] text-black font-nunito text-xl hover:bg-[#DCC99B]/80 active:bg-gray-300 active:text-white hover:text-white/80 active:border-none"
         >
           Logout
-        </Link>
+        </button>
       </nav>
+
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[#FFFCF1] rounded-lg shadow-lg p-6 w-full max-w-sm sm:max-w-md">
+            <p className="text-center text-lg sm:text-xl font-nunito text-black mb-6">
+              Are you sure you want to log out?
+            </p>
+            <div className="flex justify-around">
+              <button
+                onClick={confirmLogout}
+                className="px-6 py-2 rounded-[20px] border border-gray-600 bg-[#DCC99B] text-black font-nunito text-base sm:text-lg hover:bg-[#DCC99B]/80 active:bg-gray-300 active:text-white hover:text-white/80 active:border-none"
+              >
+                Yes
+              </button>
+              <button
+                onClick={cancelLogout}
+                className="px-6 py-2 rounded-[20px] border border-gray-600 bg-[#DCC99B] text-black font-nunito text-base sm:text-lg hover:bg-[#DCC99B]/80 active:bg-gray-300 active:text-white hover:text-white/80 active:border-none"
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

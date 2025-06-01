@@ -333,6 +333,12 @@ function OrderHistory({ token }) {
     fetchOrders();
   };
 
+  const handleClear = () => {
+    setStartDate("");
+    setEndDate("");
+    fetchOrders(); // Refetch with default (no date filters)
+  };
+
   const toggleRow = (orderId) => {
     setExpandedRow(expandedRow === orderId ? null : orderId);
   };
@@ -397,26 +403,65 @@ function OrderHistory({ token }) {
       .toFixed(2);
   };
 
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
-    <div className="flex flex-row items-center">
-      <div className="w-[145.5px] h-screen fixed top-0 bg-[#FFFCF1] border-r-2 border-black">
-        <img
-          src="https://res.cloudinary.com/dnoitugnb/image/upload/v1746340828/tmylogo.png"
-          alt="Logo"
-          className="w-full md:max-w-[300px] mt-16 mb-16"
-          onClick={() => (window.location.href = "/")}
-        />
-      </div>
-      <div className="bg-[#FFFCF1] border border-gray-500 w-full min-h-screen flex flex-col items-center">
+    <div className="flex flex-col min-h-screen bg-[#FFFCF1] md:flex-row">
+      {/* Hamburger Menu Icon for Mobile */}
+      <div className="md:hidden flex items-center justify-between p-4 z-20">
+        <i
+          className="bi bi-list text-3xl cursor-pointer"
+          onClick={toggleMenu}
+        ></i>
         <img
           src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
           alt="backarrow"
-          className="cursor-pointer absolute top-10 right-10"
+          className="cursor-pointer w-8 h-8"
           onClick={() => window.history.back()}
         />
-        <div className="flex justify-center items-center w-full mb-5 px-5">
-          <h3 className="text-3xl font-bold text-center uppercase underline mb-16 mt-16">
-            Check Order
+      </div>
+
+      {/* Overlay for Mobile */}
+      {isMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-10 md:hidden"
+          onClick={toggleMenu}
+        ></div>
+      )}
+
+      {/* Sidebar - Slides in/out on mobile */}
+      <div
+        className={`fixed top-0 left-0 w-64 md:w-[145.5px] h-screen bg-[#FFFCF1] border-r-2 border-black z-20 transform transition-transform duration-300 ease-in-out ${
+          isMenuOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0`}
+      >
+        <div className="flex justify-end p-4 md:hidden">
+          <i
+            className="bi bi-x text-3xl cursor-pointer"
+            onClick={toggleMenu}
+          ></i>
+        </div>
+        <img
+          src="https://res.cloudinary.com/dnoitugnb/image/upload/v1746340828/tmylogo.png"
+          alt="Logo"
+          className="w-full max-w-[200px] sm:max-w-[250px] md:max-w-[300px] mx-auto mt-8 sm:mt-12 md:mt-16 mb-8 sm:mb-12 md:mb-16"
+          onClick={() => (window.location.href = "/")}
+        />
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col items-center p-4 md:ml-[145.5px] md:p-6 lg:p-8">
+        <img
+          src="https://res.cloudinary.com/dnoitugnb/image/upload/v1747419279/Component_4_vdovyj.svg"
+          alt="backarrow"
+          className="cursor-pointer hidden md:block absolute top-10 right-10 w-8 h-8 md:w-24 md:h-24"
+          onClick={() => window.history.back()}
+        />
+        <div className="flex justify-center items-center w-full mb-4 sm:mb-6 mt-8 sm:mt-12 md:mt-16">
+          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-center uppercase underline mb-2">
+            Order History
           </h3>
         </div>
         {error && <p className="text-red-500 text-center mb-2.5">{error}</p>}
@@ -474,23 +519,36 @@ function OrderHistory({ token }) {
             />
             <button
               type="submit"
-              className="w-[120px] h-10 rounded-[20px] border border-gray-500 bg-gray-200/50 text-black font-semibold text-lg hover:bg-gray-300 active:bg-gray-300 active:text-white active:border-none"
+              className="w-full sm:w-32 h-10 rounded-[20px] border border-gray-500 bg-gray-200/50 text-black font-semibold text-sm sm:text-base hover:bg-gray-300 active:bg-gray-300 active:text-white active:border-none mt-[26px]"
             >
               Filter
             </button>
+            <button
+              type="button"
+              onClick={handleClear}
+              className="w-full sm:w-32 h-10 rounded-[20px] border border-gray-500 bg-gray-200/50 text-black font-semibold text-sm sm:text-base hover:bg-gray-300 active:bg-gray-300 active:text-white active:border-none mt-[26px]"
+            >
+              Clear
+            </button>
           </form>
         </div>
-        <div className="overflow-x-auto w-full max-w-5xl">
-          <table className="w-full border-collapse">
+        <div className="overflow-x-auto w-full max-w-4xl sm:max-w-5xl">
+          <table className="w-full border-collapse text-sm sm:text-base">
             <thead>
               <tr className="bg-gray-200/50">
-                <th className="border border-black/30 p-2 text-center">ID</th>
-                <th className="border border-black/30 p-2 text-center">Type</th>
-                <th className="border border-black/30 p-2 text-center">
+                <th className="border border-black/30 p-2 sm:p-3 text-center">
+                  ID
+                </th>
+                <th className="border border-black/30 p-2 sm:p-3 text-center">
+                  Type
+                </th>
+                <th className="border border-black/30 p-2 sm:p-3 text-center">
                   Table/Building
                 </th>
-                <th className="border border-black/30 p-2 text-center">Date</th>
-                <th className="border border-black/30 p-2 text-center">
+                <th className="border border-black/30 p-2 sm:p-3 text-center">
+                  Date
+                </th>
+                <th className="border border-black/30 p-2 sm:p-3 text-center">
                   Status
                 </th>
               </tr>
@@ -502,16 +560,16 @@ function OrderHistory({ token }) {
                     className="bg-[#F5E8C7] hover:bg-[#F0E0B7] cursor-pointer"
                     onClick={() => toggleRow(order.id)}
                   >
-                    <td className="border border-black/30 p-2 text-center">
+                    <td className="border border-black/30 p-2 sm:p-3 text-center">
                       {order.id}
                     </td>
-                    <td className="border border-black/30 p-2 text-center">
+                    <td className="border border-black/30 p-2 sm:p-3 text-center">
                       {order.orderType}
                     </td>
-                    <td className="border border-black/30 p-2 text-center">
+                    <td className="border border-black/30 p-2 sm:p-3 text-center">
                       {order.tableNumber || order.buildingName || "N/A"}
                     </td>
-                    <td className="border border-black/30 p-2 text-center">
+                    <td className="border border-black/30 p-2 sm:p-3 text-center">
                       {new Date(order.createdAt).toLocaleString("en-US", {
                         day: "numeric",
                         month: "numeric",
@@ -520,7 +578,7 @@ function OrderHistory({ token }) {
                         minute: "2-digit",
                       })}
                     </td>
-                    <td className="border border-black/30 p-2 text-center">
+                    <td className="border border-black/30 p-2 sm:p-3 text-center">
                       {order.status}
                       <span className="ml-2 text-black">▼</span>
                     </td>
@@ -529,9 +587,9 @@ function OrderHistory({ token }) {
                     <tr>
                       <td
                         colSpan="5"
-                        className="border border-black/30 p-4 bg-[#FFF9E5]"
+                        className="border border-black/30 p-4 sm:p-6 bg-[#FFF9E5]"
                       >
-                        <div className="flex flex-col space-y-2">
+                        <div className="flex flex-col space-y-2 text-sm sm:text-base">
                           <div>
                             <strong>Order ID:</strong> {order.id}
                           </div>
@@ -573,7 +631,7 @@ function OrderHistory({ token }) {
                             </ul>
                           </div>
                           <button
-                            className="mt-2 px-4 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                            className="mt-2 px-4 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm sm:text-base"
                             onClick={(e) => {
                               e.stopPropagation();
                               setShowDeleteConfirm(order.id);
@@ -598,7 +656,7 @@ function OrderHistory({ token }) {
                               )}
                               <div className="flex gap-2 mt-2">
                                 <button
-                                  className="px-4 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                                  className="px-4 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm sm:text-base"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleVerifyPin(order.id);
@@ -607,7 +665,7 @@ function OrderHistory({ token }) {
                                   Confirm
                                 </button>
                                 <button
-                                  className="px-4 py-1 bg-gray-300 rounded hover:bg-gray-400"
+                                  className="px-4 py-1 bg-gray-300 rounded hover:bg-gray-400 text-sm sm:text-base"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setShowDeleteConfirm(null);

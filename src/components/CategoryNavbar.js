@@ -10,7 +10,7 @@ function CategoryNavbar({
   const navigate = useNavigate();
   return (
     <nav
-      className="w-[160px] bg-[#FFFCF1] border-r-2 border-black"
+      className="w-full bg-[#FFFCF1] border-r-1 border-black fixed top-0 left-0 bottom-0 "
       style={{ opacity: isFormValid ? 1 : 0.5 }}
     >
       <img
