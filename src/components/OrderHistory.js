@@ -418,7 +418,6 @@
 // }
 
 // export default OrderHistory;
-
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 
@@ -437,7 +436,7 @@ function OrderHistory({ token }) {
   const [pinUpdateSuccess, setPinUpdateSuccess] = useState("");
   const [userRole, setUserRole] = useState("");
 
-  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+  const API_URL = process.env.REACT_APP_API_URL;
 
   // Fetch user role to determine if user is admin
   const fetchUserRole = useCallback(async () => {
