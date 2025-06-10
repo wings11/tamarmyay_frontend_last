@@ -463,7 +463,10 @@ function OrderHistory({ token }) {
       setOrders(res.data);
       setError("");
     } catch (err) {
-      console.error("Error fetching orders:", err.response?.data || err.message);
+      console.error(
+        "Error fetching orders:",
+        err.response?.data || err.message
+      );
       setError(err.response?.data?.error || "Failed to load orders");
     }
   }, [startDate, endDate, status, token, API_URL]);
@@ -587,7 +590,9 @@ function OrderHistory({ token }) {
               <p className="text-red-500 text-center mt-2">{pinUpdateError}</p>
             )}
             {pinUpdateSuccess && (
-              <p className="text-green-500 text-center mt-2">{pinUpdateSuccess}</p>
+              <p className="text-green-500 text-center mt-2">
+                {pinUpdateSuccess}
+              </p>
             )}
           </div>
         )}
