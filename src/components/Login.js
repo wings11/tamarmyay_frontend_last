@@ -10,7 +10,7 @@ function Login({ onLogin }) {
     e.preventDefault();
     try {
       const res = await axios.post(
-        "https://tamarmyaybackend-last.onrender.com/api/auth/login",
+        "api/auth/login",
         { username, password }
       );
       onLogin(res.data.token);
