@@ -99,13 +99,14 @@
 // }
 
 // export default HomePage;
-
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 
-function HomePage({ onLogout, token, API_URL }) {
-  const [userRole, setUserRole] = useState(null); // Initialize userRole state
+
+
+function HomePage({ onLogout, token, API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000" }) {
+  const [userRole, setUserRole] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const fetchUserRole = useCallback(async () => {
@@ -116,15 +117,34 @@ function HomePage({ onLogout, token, API_URL }) {
       setUserRole(res.data.role);
     } catch (err) {
       console.error("Error fetching user role:", err);
+      if (err.response?.status === 401) {
+        onLogout();
+        alert("Session expired. Please log in again.");
+      } else {
+        alert("Failed to fetch user role. Please try again.");
+      }
     }
-  }, [token, API_URL]);
+  }, [token, API_URL, onLogout]);
 
-  // Fetch user role when the component mounts
   useEffect(() => {
-    if (token && API_URL) {
-      fetchUserRole();
+    if (!token || !API_URL) {
+      console.error("Token or API_URL is missing");
+      return;
     }
+    fetchUserRole();
   }, [fetchUserRole, token, API_URL]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setShowLogoutModal(false);
+      }
+    };
+    if (showLogoutModal) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showLogoutModal]);
 
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
