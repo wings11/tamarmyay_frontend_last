@@ -69,7 +69,7 @@ const API_URL = process.env.REACT_APP_API_URL;
           Order History
         </Link>
        
-        {userRole === "admin" && (
+        
           
         <Link
           to="/sales"
@@ -77,7 +77,7 @@ const API_URL = process.env.REACT_APP_API_URL;
         >
           Sales Report
         </Link>
-        )}
+       
 
          
         <Link
