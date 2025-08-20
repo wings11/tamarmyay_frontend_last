@@ -12,23 +12,32 @@ function CreateOrder({ token }) {
   const [recentCustomers, setRecentCustomers] = useState([]);
   const [error, setError] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
+  const [occupiedTables, setOccupiedTables] = useState([]);
 
   const navigate = useNavigate();
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-  // Fetch locations on mount
+  // Fetch locations and occupied tables on mount
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         const locationsRes = await axios.get(`${API_URL}/api/locations`);
         setLocations(locationsRes.data);
         setError("");
+        // Fetch current orders to determine occupied tables
+        const ordersRes = await axios.get(
+          `${API_URL}/api/orders?status=In Process`
+        );
+        const occupied = ordersRes.data
+          .filter((order) => order.orderType === "dine-in")
+          .map((order) => order.tableNumber);
+        setOccupiedTables(occupied);
       } catch (err) {
         console.error(
-          "Error fetching locations:",
+          "Error fetching locations or orders:",
           err.response?.data || err.message
         );
-        setError("Failed to load locations");
+        setError("Failed to load locations or table status");
       }
     };
     fetchInitialData();
@@ -161,20 +170,28 @@ function CreateOrder({ token }) {
                 Table Selection:
               </p>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
-                  <button
-                    key={num}
-                    type="button"
-                    onClick={() => setTableNumber(num)}
-                    className={`px-3 py-2 rounded-full border border-gray-500 text-sm md:text-base font-nunito transition-all duration-200 ${
-                      tableNumber === num
-                        ? "bg-[#e4d4af] text-black border-gray-700"
-                        : "bg-[#FFFCF1] text-black border-gray-500 hover:bg-[#ede7d3]"
-                    }`}
-                  >
-                    Table {num}
-                  </button>
-                ))}
+                {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => {
+                  const isOccupied = occupiedTables.includes(num);
+                  return (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setTableNumber(num)}
+                      className={`px-3 py-2 rounded-full border border-gray-500 text-sm md:text-base font-nunito transition-all duration-200 ${
+                        tableNumber === num
+                          ? "bg-[#e4d4af] text-black border-gray-700"
+                          : isOccupied
+                          ? "bg-red-300 text-gray-700 border-gray-700 hover:bg-red-400"
+                          : "bg-[#FFFCF1] text-black border-gray-500 hover:bg-[#ede7d3]"
+                      }`}
+                    >
+                      Table {num}
+                      {isOccupied && (
+                        <span className="ml-1 text-xs font-bold text-red-700"></span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

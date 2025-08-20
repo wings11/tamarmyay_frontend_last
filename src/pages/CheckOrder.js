@@ -118,7 +118,7 @@ function CheckOrder({ token, orderItems, setOrderItems, resetOrderItems }) {
           }
         />
         <h3 className="p-20 text-black text-center text-3xl not-italic font-bold uppercase underline -translate-x-20">
-          Check Order
+          အော်ဒါစစ်ရန်
         </h3>
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
         {success && (
@@ -129,7 +129,7 @@ function CheckOrder({ token, orderItems, setOrderItems, resetOrderItems }) {
             <h3 className="text-black text-center text-lg not-italic font-bold">
               Items
             </h3>
-            <h3 className="text-lg font-semibold">Quantity</h3>
+            <h3 className="text-lg font-semibold">အရေအတွက်</h3>
           </div>
           {orderItems.map((item) => (
             <div key={item.foodItem.id} className="grid grid-cols-2 gap-4 py-2">
@@ -159,7 +159,7 @@ function CheckOrder({ token, orderItems, setOrderItems, resetOrderItems }) {
                   className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
                   onClick={() => handleRemoveItem(item.foodItem.id)}
                 >
-                  Remove
+                  ဖျက်ပါ
                 </button>
               </div>
             </div>
@@ -174,14 +174,14 @@ function CheckOrder({ token, orderItems, setOrderItems, resetOrderItems }) {
               : "bg-gray-400 cursor-not-allowed"
           }`}
         >
-          Send Order
+          အော်ဒါတင်မယ်
         </button>
         {/* Custom Alert Modal */}
         {showAlert && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-50">
             <div className="bg-[#fff9e3] p-6 rounded-lg shadow-lg max-w-sm w-[487px] h-32 flex flex-col justify-center">
               <h3 className="text-black text-center text-xl not-italic font-semibold">
-                Order created successfully!
+                အော်ဒါကိုအောင်မြင်စွာဖန်တီးပြီးပါပြီ!
               </h3>
             </div>
             <button

@@ -113,14 +113,14 @@ function ManageItemsAndLocationsPage({ token }) {
       <div className="w-full flex flex-col items-center justify-center mt-16 sm:mt-16 md:mt-24 lg:mt-24 ">
         <div className="flex flex-col min-[820px]:flex-row gap-4 sm:gap-6 md:gap-8 lg:gap-10 w-full max-w-3xl">
           <h2 className="text-black text-center text-base flex items-center justify-center sm:text-lg md:text-xl font-bold font-nunito whitespace-nowrap">
-            Select Management Setting:
+            ပြင်ချင်သည့်အရာကိုရွေးပါ
           </h2>
           <div className="relative w-full sm:w-auto">
             <button
               onClick={toggleItemsDropdown}
               className="flex items-center justify-center w-[250px] mx-auto h-12 sm:h-14 md:h-16 rounded-[25px] border border-gray-600 bg-[#DCC99B] text-black font-nunito text-base sm:text-lg md:text-xl hover:bg-[#DCC99B]/80 active:bg-gray-300 active:text-white hover:text-white/80 active:border-none"
             >
-              Manage Items
+              အစားအသောက် မီနူးများ
             </button>
             {itemsDropdownOpen && (
               <div className="absolute top-full mt-1 left-0 right-0 mx-auto w-full max-w-[288px] bg-[#FFFCF1] border border-gray-600 rounded shadow-lg z-10">
@@ -128,19 +128,19 @@ function ManageItemsAndLocationsPage({ token }) {
                   onClick={() => handleOptionSelect("items-add")}
                   className="block w-full text-left px-4 py-2 text-black font-nunito text-base sm:text-lg hover:bg-[#DCC99B]/50"
                 >
-                  Add
+                  ထပ်တိုးထည့်မယ်
                 </button>
                 <button
                   onClick={() => handleOptionSelect("items-edit")}
                   className="block w-full text-left px-4 py-2 text-black font-nunito text-base sm:text-lg hover:bg-[#DCC99B]/50"
                 >
-                  Edit
+                  ရှိပြီးသားကို ပြင်မယ်
                 </button>
                 <button
                   onClick={() => handleOptionSelect("items-delete")}
                   className="block w-full text-left px-4 py-2 text-black font-nunito text-base sm:text-lg hover:bg-[#DCC99B]/50"
                 >
-                  Delete
+                  ဖျက်မယ်
                 </button>
               </div>
             )}
@@ -150,7 +150,7 @@ function ManageItemsAndLocationsPage({ token }) {
               onClick={toggleLocationsDropdown}
               className="flex items-center justify-center w-[250px] mx-auto h-12 sm:h-14 md:h-16 rounded-[25px] border border-gray-600 bg-[#DCC99B] text-black font-nunito text-base sm:text-lg md:text-xl hover:bg-[#DCC99B]/80 active:bg-gray-300 active:text-white hover:text-white/80 active:border-none"
             >
-              Manage Locations
+              အော်ဒါပို့သည့်နေရာများ
             </button>
             {locationsDropdownOpen && (
               <div className="absolute top-full mt-1 left-0 right-0 mx-auto w-full max-w-[288px] sm:max-w-[418px] bg-[#FFFCF1] border border-gray-600 rounded shadow-lg z-10">
@@ -158,19 +158,19 @@ function ManageItemsAndLocationsPage({ token }) {
                   onClick={() => handleOptionSelect("locations-add")}
                   className="block w-full text-left px-4 py-2 text-black font-nunito text-base sm:text-lg hover:bg-[#DCC99B]/50"
                 >
-                  Add
+                  ထပ်တိုးထည့်မယ်
                 </button>
                 <button
                   onClick={() => handleOptionSelect("locations-edit")}
                   className="block w-full text-left px-4 py-2 text-black font-nunito text-base sm:text-lg hover:bg-[#DCC99B]/50"
                 >
-                  Edit
+                  ရှိပြီးသားကို ပြင်မယ်
                 </button>
                 <button
                   onClick={() => handleOptionSelect("locations-delete")}
                   className="block w-full text-left px-4 py-2 text-black font-nunito text-base sm:text-lg hover:bg-[#DCC99B]/50"
                 >
-                  Delete
+                  ဖျက်မယ်
                 </button>
               </div>
             )}

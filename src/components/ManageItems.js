@@ -84,7 +84,7 @@ function AddFoodItem({ token, mode, onComplete }) {
           `https://tamarmyaybackend-last.onrender.com/api/items/${selectedItemId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        setSuccess("Food item deleted successfully!");
+        setSuccess("မီနူးဖျက်ခြင်းအောင်မြင်ပါသည်");
         setFoodItems((prev) =>
           prev.filter((item) => item.id !== selectedItemId)
         );
@@ -114,7 +114,7 @@ function AddFoodItem({ token, mode, onComplete }) {
           payload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        setSuccess("Food item updated successfully!");
+        setSuccess("မီနူးပြင်ခြင်းအောင်မြင်ပါသည်");
         setFoodItems((prev) =>
           prev.map((item) =>
             item.id === selectedItemId ? { ...item, ...payload } : item
@@ -126,7 +126,7 @@ function AddFoodItem({ token, mode, onComplete }) {
           payload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        setSuccess("Food item added successfully!");
+        setSuccess("မီနူးထည့်ခြင်းအောင်မြင်ပါသည်");
         setFoodItems((prev) => [...prev, res.data]);
       } else {
         setError("Invalid mode or no item selected for edit");
@@ -157,7 +157,7 @@ function AddFoodItem({ token, mode, onComplete }) {
         {(mode === "edit" || mode === "delete") && (
           <div className="flex flex-row justify-between">
             <label className="block font-medium flex items-center h-[51px] whitespace-nowrap">
-              Select Item:
+              ပြင်မည့်/ဖျက်မည့်မီနူးကိုရွေးပါ
             </label>
             <select
               value={selectedItemId}
@@ -178,7 +178,7 @@ function AddFoodItem({ token, mode, onComplete }) {
           <>
             <div className="flex flex-row justify-between ">
               <label className="block font-medium flex items-center h-[51px]">
-                Name:
+                နာမည်
               </label>
               <input
                 type="text"
@@ -190,7 +190,7 @@ function AddFoodItem({ token, mode, onComplete }) {
             </div>
             <div className="flex flex-row justify-between">
               <label className="block font-medium flex items-center h-[51px]">
-                Category:
+                အမျိုးအစား
               </label>
               <select
                 value={category}
@@ -198,7 +198,7 @@ function AddFoodItem({ token, mode, onComplete }) {
                 required
                 className="p-2 border rounded w-[418px] h-[51px]"
               >
-                <option value="">Select Category</option>
+                <option value="">ရွေးပါ</option>
                 {categories.map((cat) => (
                   <option key={cat} value={cat}>
                     {cat}
@@ -208,7 +208,7 @@ function AddFoodItem({ token, mode, onComplete }) {
             </div>
             <div className="flex flex-row justify-between">
               <label className="block font-medium flex items-center h-[51px] whitespace-nowrap">
-                Price (Baht):
+                စျေးနှုန်း (Baht):
               </label>
               <input
                 type="number"
@@ -236,16 +236,16 @@ function AddFoodItem({ token, mode, onComplete }) {
             type="submit"
             className="px-4 py-2 bg-[#DCC99B]/50 text-black rounded hover:bg-[#DCC99B]/80"
           >
-            {mode === "add" && "Add Food Item"}
-            {mode === "edit" && "Update Food Item"}
-            {mode === "delete" && "Delete Food Item"}
+            {mode === "add" && "ထည့်မယ်"}
+            {mode === "edit" && "ပြင်မယ်"}
+            {mode === "delete" && "ဖျက်မယ်"}
           </button>
           <button
             type="button"
             onClick={handleCancel}
             className="px-4 py-2 bg-[#DCC99B]/50 text-black rounded hover:bg-[#DCC99B]/80"
           >
-            Cancel
+            မလုပ်တော့ပါ
           </button>
         </div>
       </form>

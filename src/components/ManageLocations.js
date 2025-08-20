@@ -52,7 +52,7 @@ function ManageLocations({ token, mode, onComplete }) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setLocations([...locations, res.data]);
-      setSuccess("Location added successfully!");
+      setSuccess("နေရာထည့်ခြင်း အောင်မြင်ပါသည်");
       resetForm();
       onComplete(); // Close modal
     } catch (err) {
@@ -86,7 +86,7 @@ function ManageLocations({ token, mode, onComplete }) {
             : loc
         )
       );
-      setSuccess("Location updated successfully!");
+      setSuccess("နေရာပြင်ခြင်း အောင်မြင်ပါသည်");
       resetForm();
       onComplete(); // Close modal
     } catch (err) {
@@ -109,7 +109,7 @@ function ManageLocations({ token, mode, onComplete }) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setLocations((prev) => prev.filter((loc) => loc.id !== locationId));
-      setSuccess("Location deleted successfully!");
+      setSuccess("နေရာဖျက်ခြင်း အောင်မြင်ပါသည်");
       resetForm();
       onComplete(); // Close modal
     } catch (err) {
@@ -136,11 +136,11 @@ function ManageLocations({ token, mode, onComplete }) {
         <form onSubmit={handleAddLocation} className="space-y-4 ">
           <div className="flex flex-row justify-between">
             <label className="block font-medium flex items-center h-[51px]">
-              Building Name:
+              အဆောက်အဦးနာမည်
             </label>
             <input
               type="text"
-              placeholder="Building Name"
+              placeholder="ဘန်းဒစ်"
               value={newLocation}
               onChange={(e) => setNewLocation(e.target.value)}
               required
@@ -152,14 +152,14 @@ function ManageLocations({ token, mode, onComplete }) {
               type="submit"
               className="px-4 py-2 bg-[#DCC99B]/50 text-black rounded hover:bg-[#DCC99B]/80"
             >
-              Add Location
+             ထည့်မယ်
             </button>
             <button
               type="button"
               onClick={handleCancel}
               className="px-4 py-2 bg-[#DCC99B]/50 text-black rounded hover:bg-[#DCC99B]/80"
             >
-              Cancel
+              မလုပ်တော့ပါ
             </button>
           </div>
         </form>
@@ -172,7 +172,7 @@ function ManageLocations({ token, mode, onComplete }) {
             <form onSubmit={handleUpdateLocation} className="space-y-4 ">
               <div className="flex flex-row justify-between">
                 <label className="block font-medium flex items-center h-[51px]">
-                  Building Name:
+                    အဆောက်အဦးနာမည်
                 </label>
                 <input
                   type="text"
@@ -187,20 +187,20 @@ function ManageLocations({ token, mode, onComplete }) {
                   type="submit"
                   className="px-4 py-2 bg-[#DCC99B]/50 text-black rounded hover:bg-[#DCC99B]/80"
                 >
-                  Update Location
+                 ပြင်မယ်
                 </button>
                 <button
                   type="button"
                   onClick={handleCancel}
                   className="px-4 py-2 bg-[#DCC99B]/50 text-black rounded hover:bg-[#DCC99B]/80"
                 >
-                  Cancel
+                  မလုပ်တော့ပါ
                 </button>
               </div>
             </form>
           ) : (
             <p className="mb-4">
-              Select a location to edit from the table below.
+             ပြင်ချင်သည့်နေရာကိုရွေးပါ
             </p>
           )}
         </>
@@ -211,8 +211,8 @@ function ManageLocations({ token, mode, onComplete }) {
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-[#FFFCF1]">
-              <th className="p-2 border">Building Name</th>
-              <th className="p-2 border">Actions</th>
+              <th className="p-2 border">အဆောက်အဦးနာမည်</th>
+              <th className="p-2 border">ပြင်ရန်/ဖျက်ရန်</th>
             </tr>
           </thead>
           <tbody>
@@ -225,7 +225,7 @@ function ManageLocations({ token, mode, onComplete }) {
                       onClick={() => handleEditLocation(loc)}
                       className="px-2 py-1 bg-[#DCC99B]/50 text-black rounded hover:bg-[#DCC99B]/80"
                     >
-                      Edit
+                      ပြင်မယ်
                     </button>
                   )}
 
@@ -234,7 +234,7 @@ function ManageLocations({ token, mode, onComplete }) {
                       onClick={() => handleDeleteLocation(loc.id)}
                       className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
                     >
-                      Delete
+                      ဖျက်မယ်
                     </button>
                   )}
                 </td>
@@ -249,7 +249,7 @@ function ManageLocations({ token, mode, onComplete }) {
           onClick={handleCancel}
           className="px-4 py-2 bg-[#DCC99B]/50 text-black rounded hover:bg-[#DCC99B]/80 mt-8 w-[120px] h-10 flex items-center justify-center"
         >
-          Cancel
+          မလုပ်တော့ပါ
         </button>
       </div>
     </div>

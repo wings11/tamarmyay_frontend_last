@@ -54,19 +54,19 @@ const API_URL = process.env.REACT_APP_API_URL;
           to="/createorder"
           className="flex items-center justify-center w-[288px] h-16 rounded-[25px] border border-gray-600 bg-[#DCC99B] text-black font-nunito text-xl hover:bg-[#DCC99B]/80 active:bg-gray-300 active:text-white hover:text-white/80 active:border-none text-size"
         >
-          Create Order
+          အော်ဒါအသစ်တင်ရန်
         </Link>
         <Link
           to="/checkout"
           className="flex items-center justify-center w-[288px] h-16 rounded-[25px] border border-gray-600 bg-[#DCC99B] text-black font-nunito text-xl hover:bg-[#DCC99B]/80 active:bg-gray-300 active:text-white hover:text-white/80 active:border-none"
         >
-          Checkout
+          ငွေရှင်း
         </Link>
         <Link
           to="/history"
           className="flex items-center justify-center w-[288px] h-16 rounded-[25px] border border-gray-600 bg-[#DCC99B] text-black font-nunito text-xl hover:bg-[#DCC99B]/80 active:bg-gray-300 active:text-white hover:text-white/80 active:border-none"
         >
-          Order History
+          အော်ဒါများ ပြန်ကြည့်ရန်
         </Link>
        
         
@@ -87,7 +87,7 @@ const API_URL = process.env.REACT_APP_API_URL;
             console.log("Management button clicked, navigating to /management")
           }
         >
-          Manage Items & Locations
+          မီနူးနှင့် နေရာများ
         </Link>
    
         <button

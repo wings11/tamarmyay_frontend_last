@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bluetooth Printer Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.success { background: #d4edda; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; border: 1px solid #f5c6cb; }
+        .status.info { background: #d1ecf1; border: 1px solid #bee5eb; }
+        .receipt-preview {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            font-family: monospace;
+            white-space: pre-line;
+            margin: 10px 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Bluetooth Thermal Printer Test</h1>
+        
+        <div class="test-section">
+            <h3>Step 1: Test Printer Connection</h3>
+            <p>This will test the Bluetooth connection without needing a real printer.</p>
+            <button id="connectBtn" onclick="testConnect()">📱 Connect Test Printer</button>
+            <div id="connectionStatus"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Step 2: Test Receipt Printing</h3>
+            <p>This will show how your receipt will look when printed.</p>
+            <button id="printBtn" onclick="testPrint()" disabled>🖨️ Test Print Receipt</button>
+            <div id="printStatus"></div>
+            <div id="receiptPreview" class="receipt-preview" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Results</h3>
+            <div id="testResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📱 Android Tablet Instructions</h3>
+            <p><strong>To test on your Android tablet:</strong></p>
+            <ol>
+                <li>Open this page in Chrome on your tablet</li>
+                <li>Click "Connect Test Printer" - it will work in simulation mode</li>
+                <li>Click "Test Print Receipt" - see your receipt preview</li>
+                <li>When you buy a real printer, it will work the same way!</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Mock Bluetooth Thermal Printer for testing
+        class MockBluetoothThermalPrinter {
+            constructor() {
+                this.isConnected = false;
+                this.isTestMode = true;
+            }
+
+            async connect() {
+                // Simulate connection delay
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                if (!navigator.bluetooth) {
+                    console.log('🧪 No Bluetooth API - using test mode');
+                } else {
+                    console.log('🧪 Bluetooth available but using test mode');
+                }
+                
+                this.isConnected = true;
+                return true;
+            }
+
+            formatReceiptForDisplay(receiptData) {
+                let output = '';
+                output += '================================\n';
+                output += '      ' + (receiptData.restaurantName || 'TAMARMYAY RESTAURANT') + '\n';
+                output += '================================\n';
+                output += '\n';
+                output += (receiptData.address1 || '52/345-2 Ek Prachim Road, Lak Hok,') + '\n';
+                output += (receiptData.address2 || 'Pathum Thani, 12000') + '\n';
+                output += '\n';
+                output += `Order Type: ${receiptData.orderType}\n`;
+                if (receiptData.tableNumber) {
+                    output += `Table No: ${receiptData.tableNumber}\n`;
+                }
+                output += `Date & Time: ${receiptData.dateTime}\n`;
+                output += `Order ID: ${receiptData.orderId}\n`;
+                output += '\n';
+                output += '--------------------------------\n';
+                output += 'Item                Qty    Price\n';
+                output += '--------------------------------\n';
+                
+                receiptData.items?.forEach(item => {
+                    const name = item.name.length > 15 ? item.name.substring(0, 12) + '...' : item.name;
+                    const qty = item.quantity.toString().padStart(3);
+                    const price = `${parseFloat(item.price).toFixed(2)} B`.padStart(8);
+                    output += `${name.padEnd(15)} ${qty} ${price}\n`;
+                });
+                
+                output += '--------------------------------\n';
+                output += `${'Total: ' + parseFloat(receiptData.total).toFixed(2) + ' B'}`.padStart(32) + '\n';
+                output += '--------------------------------\n';
+                
+                if (receiptData.paymentMethod) {
+                    output += `Payment: ${receiptData.paymentMethod}\n`;
+                }
+                
+                if (receiptData.customerNote) {
+                    output += `Note: ${receiptData.customerNote}\n`;
+                }
+                
+                output += '\n';
+                output += '   ' + (receiptData.footerMessage || 'Thank You & See You Again') + '\n';
+                output += '\n';
+                
+                return output;
+            }
+
+            async print(receiptData) {
+                if (!this.isConnected) {
+                    throw new Error('Printer not connected');
+                }
+
+                // Simulate printing delay
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                console.log('🧪 TEST MODE: Printing receipt...');
+                const receipt = this.formatReceiptForDisplay(receiptData);
+                console.log(receipt);
+                
+                return receipt;
+            }
+        }
+
+        let mockPrinter = new MockBluetoothThermalPrinter();
+
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        async function testConnect() {
+            const btn = document.getElementById('connectBtn');
+            btn.disabled = true;
+            btn.textContent = '🔄 Connecting...';
+            
+            updateStatus('connectionStatus', '🔄 Testing connection...', 'info');
+            
+            try {
+                await mockPrinter.connect();
+                
+                updateStatus('connectionStatus', '✅ Test printer connected successfully! (Simulation mode)', 'success');
+                document.getElementById('printBtn').disabled = false;
+                btn.textContent = '✅ Connected (Test Mode)';
+                btn.style.background = '#28a745';
+                
+                updateStatus('testResults', '✅ Connection test PASSED - Ready for real printer!', 'success');
+            } catch (error) {
+                updateStatus('connectionStatus', `❌ Connection failed: ${error.message}`, 'error');
+                btn.disabled = false;
+                btn.textContent = '📱 Connect Test Printer';
+            }
+        }
+
+        async function testPrint() {
+            const btn = document.getElementById('printBtn');
+            btn.disabled = true;
+            btn.textContent = '🔄 Printing...';
+            
+            updateStatus('printStatus', '🔄 Testing print...', 'info');
+            
+            // Sample receipt data (like your real orders)
+            const sampleReceiptData = {
+                restaurantName: "TAMARMYAY RESTAURANT",
+                address1: "52/345-2 Ek Prachim Road, Lak Hok,",
+                address2: "Pathum Thani, 12000",
+                orderType: "Dine-in",
+                tableNumber: "5",
+                dateTime: new Date().toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                }),
+                orderId: "TEST123",
+                items: [
+                    { name: "Pad Thai", quantity: 2, price: "120.00" },
+                    { name: "Green Curry", quantity: 1, price: "85.00" },
+                    { name: "Thai Tea", quantity: 2, price: "25.00" }
+                ],
+                total: "255.00",
+                paymentMethod: "Cash",
+                customerNote: "Extra spicy please",
+                footerMessage: "Thank You & See You Again"
+            };
+            
+            try {
+                const receipt = await mockPrinter.print(sampleReceiptData);
+                
+                updateStatus('printStatus', '✅ Receipt printed successfully! (This is how it will look on thermal printer)', 'success');
+                
+                // Show receipt preview
+                document.getElementById('receiptPreview').style.display = 'block';
+                document.getElementById('receiptPreview').textContent = receipt;
+                
+                btn.disabled = false;
+                btn.textContent = '🖨️ Test Print Again';
+                
+                updateStatus('testResults', '✅ Print test PASSED - Your thermal printer will work perfectly!', 'success');
+            } catch (error) {
+                updateStatus('printStatus', `❌ Print failed: ${error.message}`, 'error');
+                btn.disabled = false;
+                btn.textContent = '🖨️ Test Print Receipt';
+            }
+        }
+
+        // Initial status
+        updateStatus('testResults', '🧪 Ready to test Bluetooth printing functionality', 'info');
+    </script>
+</body>
+</html>

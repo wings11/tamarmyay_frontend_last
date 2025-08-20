@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test POS Printer</title>
+</head>
+<body>
+    <h1>Test POS Printer</h1>
+    <button onclick="testPrint()">Test Print Receipt</button>
+    <div id="result"></div>
+
+    <script>
+        async function testPrint() {
+            const testReceipt = {
+                restaurantName: "TAMARMYAY RESTAURANT",
+                address1: "52/345-2 Ek Prachim Road, Lak Hok,",
+                address2: "Pathum Thani, 12000",
+                orderType: "Dine-in",
+                tableNumber: "5",
+                dateTime: new Date().toLocaleString(),
+                orderId: "TEST123",
+                items: [
+                    { name: "Pad Thai", quantity: 2, price: "120.00" },
+                    { name: "Green Curry", quantity: 1, price: "85.00" },
+                    { name: "Thai Tea", quantity: 2, price: "25.00" }
+                ],
+                total: "255.00",
+                paymentMethod: "Cash",
+                customerNote: "Extra spicy",
+                footerMessage: "Thank You & See You Again"
+            };
+
+            try {
+                const response = await fetch('http://localhost:3001/print', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testReceipt)
+                });
+
+                const result = await response.json();
+                document.getElementById('result').innerHTML = 
+                    `<p style="color: green;">✅ ${result.message} (Mode: ${result.mode})</p>`;
+                
+                console.log('Print result:', result);
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    `<p style="color: red;">❌ Print failed: ${error.message}</p>`;
+                console.error('Print error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

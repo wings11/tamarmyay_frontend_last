@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
+import BluetoothThermalPrinter from "../utils/BluetoothThermalPrinter";
 
 function Invoice({ token }) {
   const [order, setOrder] = useState(null);
@@ -9,6 +10,8 @@ function Invoice({ token }) {
   const [customerNote, setCustomerNote] = useState("");
   const [error, setError] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false); // State for toggling sidebar on mobile
+  const [bluetoothPrinter, setBluetoothPrinter] = useState(null);
+  const [isPrinterConnected, setIsPrinterConnected] = useState(false);
   const { state } = useLocation();
   const navigate = useNavigate();
   const tableNumber = state?.tableNumber || "";
@@ -113,8 +116,114 @@ function Invoice({ token }) {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  // Initialize Bluetooth printer
+  useEffect(() => {
+    const printer = new BluetoothThermalPrinter();
+    setBluetoothPrinter(printer);
+  }, []);
+
+  // Connect to Bluetooth printer
+  const connectBluetoothPrinter = async () => {
+    try {
+      if (!bluetoothPrinter) return;
+      
+      await bluetoothPrinter.connect();
+      setIsPrinterConnected(true);
+      setError("");
+      
+      // Check if it's test mode
+      if (bluetoothPrinter.isTestMode || (bluetoothPrinter.device && bluetoothPrinter.device.mock)) {
+        alert("🧪 TEST MODE: Mock printer connected! You can test printing without a real printer.");
+      } else {
+        alert("✅ Real Bluetooth printer connected successfully!");
+      }
+    } catch (error) {
+      console.error("Bluetooth connection failed:", error);
+      setError("Failed to connect to Bluetooth printer. Make sure printer is on and in pairing mode.");
+      setIsPrinterConnected(false);
+    }
+  };
+
+  const handlePrint = async () => {
+    if (!order) {
+      setError("No order to print");
+      return;
+    }
+
+    // Calculate total
+    const total = order.FoodItems?.reduce((sum, item) => {
+      const price = parseFloat(item.OrderItem?.price) || parseFloat(foodItems[item.id]?.price) || 0;
+      const quantity = parseInt(item.OrderItem?.quantity) || 1;
+      return sum + price * quantity;
+    }, 0) || 0;
+
+    // Prepare receipt data in your exact format
+    const receiptData = {
+      restaurantName: "TAMARMYAY RESTAURANT",
+      address1: "52/345-2 Ek Prachim Road, Lak Hok,",
+      address2: "Pathum Thani, 12000",
+      orderType: orderType.charAt(0).toUpperCase() + orderType.slice(1),
+      tableNumber: orderType === "dine-in" ? tableNumber : null,
+      dateTime: currentDateTime,
+      orderId: order.id,
+      customerName: orderType === "delivery" ? order.customerName : null,
+      buildingName: orderType === "delivery" ? order.buildingName : null,
+      items: order.FoodItems?.map(item => ({
+        name: item.name,
+        quantity: item.OrderItem?.quantity || 1,
+        price: (parseFloat(item.OrderItem?.price) || parseFloat(foodItems[item.id]?.price) || 0).toFixed(2)
+      })) || [],
+      total: total.toFixed(2),
+      paymentMethod: paymentMethod || null,
+      customerNote: customerNote || null,
+      footerMessage: "Thank You & See You Again"
+    };
+
+    try {
+      // Try Bluetooth thermal printing first
+      if (bluetoothPrinter && isPrinterConnected) {
+        await bluetoothPrinter.print(receiptData);
+        alert('✅ Receipt printed on thermal printer!');
+        return;
+      }
+
+      // If no Bluetooth printer, offer to connect
+      if (bluetoothPrinter && !isPrinterConnected) {
+        const shouldConnect = window.confirm(
+          'Bluetooth printer not connected. Would you like to connect now?'
+        );
+        if (shouldConnect) {
+          await connectBluetoothPrinter();
+          // Try printing again after connection
+          if (isPrinterConnected) {
+            await bluetoothPrinter.print(receiptData);
+            alert('✅ Receipt printed on thermal printer!');
+            return;
+          }
+        }
+      }
+
+      // Fallback to browser print
+      const fallbackChoice = window.confirm(
+        'Thermal printer unavailable. Would you like to print using browser instead?'
+      );
+      
+      if (fallbackChoice) {
+        window.print();
+      }
+    } catch (error) {
+      console.error('Print failed:', error);
+      setError(`Print failed: ${error.message}`);
+      
+      // Fallback to browser print
+      const fallbackChoice = window.confirm(
+        'Thermal printing failed. Would you like to print using browser instead?'
+      );
+      
+      if (fallbackChoice) {
+        window.print();
+      }
+    }
   };
 
   const toggleMenu = () => {
@@ -315,6 +424,17 @@ function Invoice({ token }) {
               </div>
               <div className="flex flex-col gap-3 sm:gap-4">
                 <button
+                  onClick={connectBluetoothPrinter}
+                  className={`w-full max-w-[150px] h-10 sm:h-12 rounded-[20px] font-semibold text-sm sm:text-base ${
+                    isPrinterConnected 
+                      ? 'bg-green-500 text-white' 
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
+                  disabled={isPrinterConnected}
+                >
+                  {isPrinterConnected ? '✅ Printer Ready' : '📱 Connect Printer'}
+                </button>
+                <button
                   onClick={handleCheckout}
                   className="w-full max-w-[150px] h-10 sm:h-12 bg-[#DCC99B]/70 text-black rounded-[20px] font-semibold hover:bg-[#DCC99B]/80 text-sm sm:text-base"
                 >
@@ -324,7 +444,7 @@ function Invoice({ token }) {
                   onClick={handlePrint}
                   className="w-full max-w-[150px] h-10 sm:h-12 bg-[#DCC99B]/70 text-black rounded-[20px] font-semibold hover:bg-[#DCC99B]/80 text-sm sm:text-base"
                 >
-                  Print
+                  🖨️ Print Receipt
                 </button>
               </div>
             </div>
