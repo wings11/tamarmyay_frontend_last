@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
-import BluetoothThermalPrinter from "../utils/BluetoothThermalPrinter";
+import { usePrinter } from "../contexts/PrinterContext";
 
 function Invoice({ token }) {
   const [order, setOrder] = useState(null);
@@ -10,8 +10,16 @@ function Invoice({ token }) {
   const [customerNote, setCustomerNote] = useState("");
   const [error, setError] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false); // State for toggling sidebar on mobile
-  const [bluetoothPrinter, setBluetoothPrinter] = useState(null);
-  const [isPrinterConnected, setIsPrinterConnected] = useState(false);
+  
+  // Use global printer context instead of local state
+  const { 
+    isConnected: isPrinterConnected, 
+    connectPrinter, 
+    printReceipt, 
+    checkConnection,
+    connectionStatus 
+  } = usePrinter();
+  
   const { state } = useLocation();
   const navigate = useNavigate();
   const tableNumber = state?.tableNumber || "";
@@ -116,31 +124,28 @@ function Invoice({ token }) {
     }
   };
 
-  // Initialize Bluetooth printer
-  useEffect(() => {
-    const printer = new BluetoothThermalPrinter();
-    setBluetoothPrinter(printer);
-  }, []);
+  // No need for separate initialization with global printer context
+  // useEffect removed - printer is managed globally
 
-  // Connect to Bluetooth printer
+  // Connect to Bluetooth printer using global context
   const connectBluetoothPrinter = async () => {
     try {
-      if (!bluetoothPrinter) return;
+      // Check if already connected
+      if (checkConnection()) {
+        alert("✅ Printer is already connected!");
+        return;
+      }
       
-      await bluetoothPrinter.connect();
-      setIsPrinterConnected(true);
+      await connectPrinter();
       setError("");
       
-      // Check if it's test mode
-      if (bluetoothPrinter.isTestMode || (bluetoothPrinter.device && bluetoothPrinter.device.mock)) {
-        alert("🧪 TEST MODE: Mock printer connected! You can test printing without a real printer.");
-      } else {
-        alert("✅ Real Bluetooth printer connected successfully!");
+      // Show appropriate message based on connection type
+      if (connectionStatus === 'connected') {
+        alert("✅ Bluetooth printer connected successfully! Connection will persist for the entire session.");
       }
     } catch (error) {
       console.error("Bluetooth connection failed:", error);
       setError("Failed to connect to Bluetooth printer. Make sure printer is on and in pairing mode.");
-      setIsPrinterConnected(false);
     }
   };
 
@@ -160,7 +165,7 @@ function Invoice({ token }) {
     // Prepare receipt data in your exact format
     const receiptData = {
       restaurantName: "TAMARMYAY RESTAURANT",
-      address1: "52/345-2 Ek Prachim Road, Lak Hok,",
+      address1: "52/345-2 Ek Prachim Rd, Lak Hok,",
       address2: "Pathum Thani, 12000",
       orderType: orderType.charAt(0).toUpperCase() + orderType.slice(1),
       tableNumber: orderType === "dine-in" ? tableNumber : null,
@@ -180,44 +185,17 @@ function Invoice({ token }) {
     };
 
     try {
-      // Try Bluetooth thermal printing first
-      if (bluetoothPrinter && isPrinterConnected) {
-        await bluetoothPrinter.print(receiptData);
-        alert('✅ Receipt printed on thermal printer!');
-        return;
-      }
-
-      // If no Bluetooth printer, offer to connect
-      if (bluetoothPrinter && !isPrinterConnected) {
-        const shouldConnect = window.confirm(
-          'Bluetooth printer not connected. Would you like to connect now?'
-        );
-        if (shouldConnect) {
-          await connectBluetoothPrinter();
-          // Try printing again after connection
-          if (isPrinterConnected) {
-            await bluetoothPrinter.print(receiptData);
-            alert('✅ Receipt printed on thermal printer!');
-            return;
-          }
-        }
-      }
-
-      // Fallback to browser print
-      const fallbackChoice = window.confirm(
-        'Thermal printer unavailable. Would you like to print using browser instead?'
-      );
-      
-      if (fallbackChoice) {
-        window.print();
-      }
+      // Use global printer context for printing
+      await printReceipt(receiptData);
+      alert('✅ Receipt printed successfully!');
+      return;
     } catch (error) {
       console.error('Print failed:', error);
       setError(`Print failed: ${error.message}`);
       
       // Fallback to browser print
       const fallbackChoice = window.confirm(
-        'Thermal printing failed. Would you like to print using browser instead?'
+        `Thermal printing failed: ${error.message}\n\nWould you like to print using browser instead?`
       );
       
       if (fallbackChoice) {
@@ -432,7 +410,7 @@ function Invoice({ token }) {
                   }`}
                   disabled={isPrinterConnected}
                 >
-                  {isPrinterConnected ? '✅ Printer Ready' : '📱 Connect Printer'}
+                  {isPrinterConnected ? '✅ Connected' : '📱 Connect Printer'}
                 </button>
                 <button
                   onClick={handleCheckout}

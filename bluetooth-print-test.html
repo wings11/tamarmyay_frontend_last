@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bluetooth Printer Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-data {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖨️ Bluetooth Thermal Printer Test</h1>
+        <p>This page tests the updated Bluetooth printer functionality with persistent connection and Burmese text handling.</p>
+        
+        <div id="status" class="status disconnected">
+            📡 Status: Not Connected
+        </div>
+        
+        <div>
+            <button id="connectBtn" onclick="connectPrinter()">🔗 Connect Printer</button>
+            <button id="printBtn" onclick="printTestReceipt()" disabled>🖨️ Print Test Receipt</button>
+            <button id="printBurmeseBtn" onclick="printBurmeseTest()" disabled>🌏 Print Burmese Test</button>
+            <button id="disconnectBtn" onclick="disconnectPrinter()" disabled>❌ Disconnect</button>
+        </div>
+        
+        <div class="test-data">
+<strong>Test Receipt Data:</strong>
+Restaurant: TAMARMYAY RESTAURANT
+Order: Table 5 - Dine-in
+Items:
+- Chicken x2 = 150
+- Rice x1 = 30  
+- Tea x1 = 25
+Total: 205
+
+<strong>What's Fixed:</strong>
+✅ Persistent connection (no reconnect needed)
+✅ Burmese text → phonetic English conversion
+✅ Fixed item/price alignment (no wrapping)
+✅ Logo image support (loads from Cloudinary)
+✅ Auto-reconnect on connection loss
+        </div>
+        
+        <div id="log" style="background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; margin: 10px 0; border-radius: 5px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;">
+            <strong>Connection Log:</strong><br>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the updated BluetoothThermalPrinter
+        class BluetoothThermalPrinter {
+            constructor() {
+                this.device = null;
+                this.server = null;
+                this.service = null;
+                this.characteristic = null;
+                this.isTestMode = !navigator.bluetooth;
+                this.isConnected = false;
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 3;
+                this.autoReconnect = true;
+            }
+
+            log(message) {
+                const logDiv = document.getElementById('log');
+                const timestamp = new Date().toLocaleTimeString();
+                logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+                logDiv.scrollTop = logDiv.scrollHeight;
+                console.log(message);
+            }
+
+            async connect() {
+                try {
+                    if (this.isTestMode || !navigator.bluetooth) {
+                        this.log('🧪 TEST MODE: Simulating connection...');
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        this.device = { mock: true };
+                        this.isConnected = true;
+                        this.log('✅ TEST MODE: Mock printer connected!');
+                        return true;
+                    }
+
+                    // Check if already connected
+                    if (this.isConnected && this.device && this.device.gatt && this.device.gatt.connected) {
+                        this.log('🔗 Already connected to: ' + this.device.name);
+                        return true;
+                    }
+
+                    // Try reconnect first
+                    if (this.device && this.device.gatt && !this.device.gatt.connected) {
+                        this.log('🔄 Attempting to reconnect...');
+                        try {
+                            this.server = await this.device.gatt.connect();
+                            this.service = await this.server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
+                            this.characteristic = await this.service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
+                            this.isConnected = true;
+                            this.log('✅ Reconnected successfully!');
+                            return true;
+                        } catch (e) {
+                            this.log('⚠️ Reconnection failed, trying fresh connection...');
+                        }
+                    }
+
+                    this.log('🔍 Searching for Bluetooth printers...');
+                    this.device = await navigator.bluetooth.requestDevice({
+                        filters: [
+                            { services: ['000018f0-0000-1000-8000-00805f9b34fb'] },
+                            { namePrefix: 'XP-' },
+                            { namePrefix: 'MTP-' },
+                            { namePrefix: 'POS-' },
+                        ],
+                        optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+                    });
+
+                    this.log('📱 Selected: ' + this.device.name);
+
+                    if (this.autoReconnect) {
+                        this.device.addEventListener('gattserverdisconnected', this.onDisconnected.bind(this));
+                    }
+
+                    this.server = await this.device.gatt.connect();
+                    this.service = await this.server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
+                    this.characteristic = await this.service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
+                    
+                    this.isConnected = true;
+                    this.log('✅ Real Bluetooth printer connected!');
+                    return true;
+                } catch (error) {
+                    this.log('❌ Connection failed: ' + error.message);
+                    this.isConnected = false;
+                    throw error;
+                }
+            }
+
+            onDisconnected(event) {
+                this.log('📡 Device disconnected: ' + event.target.name);
+                this.isConnected = false;
+                updateUI();
+                
+                if (this.autoReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
+                    this.reconnectAttempts++;
+                    this.log(`🔄 Auto-reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}...`);
+                    
+                    setTimeout(async () => {
+                        try {
+                            await this.connect();
+                            updateUI();
+                        } catch (error) {
+                            this.log(`❌ Auto-reconnect failed: ${error.message}`);
+                        }
+                    }, 2000);
+                }
+            }
+
+            containsBurmese(text) {
+                return /[\u1000-\u109F\uAA60-\uAA7F]/.test(text);
+            }
+
+            // Keep Myanmar text as-is but handle encoding properly
+            convertBurmeseForPrinter(text) {
+                // Keep the original Myanmar text - don't convert to English
+                return text;
+            }
+
+            // Convert Myanmar text to phonetic representation for thermal printer compatibility
+            convertMyanmarToPhonetic(text) {
+                const myanmarToEnglish = {
+                    'ကြက်သား': 'Chicken',
+                    'ဝက်သား': 'Pork', 
+                    'ငါး': 'Fish',
+                    'ထမင်း': 'Rice',
+                    'လက်ဖက်ရည်': 'Tea',
+                    'ကော်ဖီ': 'Coffee',
+                    'မုန်လာဥနီ': 'Monlani',
+                    'ကြက်ဥ': 'Egg',
+                    'ချက်ခင်း': 'Fried',
+                    'အသား': 'Meat',
+                    'ဟင်း': 'Curry'
+                };
+                
+                if (myanmarToEnglish[text]) {
+                    return myanmarToEnglish[text];
+                }
+                
+                for (const [myanmar, english] of Object.entries(myanmarToEnglish)) {
+                    if (text.includes(myanmar)) {
+                        return text.replace(myanmar, english);
+                    }
+                }
+                
+                const simplified = text.replace(/[\u1000-\u109F\uAA60-\uAA7F]/g, '');
+                return simplified.trim().length > 0 ? simplified.trim() : 'Item';
+            }
+
+            truncateText(text, maxLength) {
+                if (!text) return '';
+                return text.length > maxLength ? text.substring(0, maxLength - 3) + '...' : text;
+            }
+
+            async formatReceiptForThermalPrint(receiptData) {
+                const ESC = '\x1B';
+                const GS = '\x1D';
+                
+                let commands = '';
+                commands += ESC + '@'; // Initialize
+                commands += ESC + 't' + '\x00'; // Character set
+                
+                // Header
+                commands += ESC + 'a' + '\x01'; // Center align
+                commands += ESC + 'E' + '\x01'; // Bold on
+                commands += receiptData.restaurantName || 'TAMARMYAY RESTAURANT';
+                commands += '\n';
+                commands += ESC + 'E' + '\x00'; // Bold off
+                commands += '================================\n';
+                
+                // Address
+                commands += (receiptData.address1 || '52/345-2 Ek Prachim Road, Lak Hok,') + '\n';
+                commands += (receiptData.address2 || 'Pathum Thani, 12000') + '\n\n';
+                
+                // Order details
+                commands += ESC + 'a' + '\x00'; // Left align
+                commands += `Order Type : ${receiptData.orderType}\n`;
+                if (receiptData.tableNumber) {
+                    commands += `Table No   : ${receiptData.tableNumber}\n`;
+                }
+                
+                // Split date and time for better formatting
+                const dateTime = receiptData.dateTime || new Date().toLocaleString();
+                const [datePart, timePart] = dateTime.includes(',') ? 
+                  dateTime.split(', ') : 
+                  [dateTime.split(' ').slice(0, 3).join(' '), dateTime.split(' ').slice(3).join(' ')];
+                
+                commands += `Date       : ${datePart}\n`;
+                commands += `Time       : ${timePart}\n`;
+                commands += `Order ID   : ${receiptData.orderId}\n\n`;
+                
+                commands += '--------------------------------\n';
+                
+                // Fixed header with proper spacing
+                commands += 'Item            Qty     Price\n';
+                commands += '--------------------------------\n';
+                
+                // Items with Myanmar text handling for thermal printers
+                receiptData.items?.forEach(item => {
+                    let itemName = item.name || '';
+                    
+                    // Handle Myanmar text - convert to phonetic representation for thermal printer compatibility
+                    if (this.containsBurmese(itemName)) {
+                        // Convert Myanmar to phonetic or use fallback
+                        itemName = this.convertMyanmarToPhonetic(itemName);
+                    }
+                    
+                    // Ensure proper length
+                    if (itemName.length > 15) {
+                        itemName = itemName.substring(0, 12) + '...';
+                    }
+                    
+                    const qty = String(item.quantity || 1);
+                    const price = `${parseFloat(item.price || 0).toFixed(2)}`;
+                    
+                    // Use fixed-width formatting with consistent spacing
+                    const paddedName = itemName.padEnd(15).substring(0, 15);
+                    const paddedQty = qty.padStart(3);
+                    const paddedPrice = price.padStart(8);
+                    
+                    commands += `${paddedName} ${paddedQty} ${paddedPrice}\n`;
+                });
+                
+                commands += '--------------------------------\n';
+                
+                // Total
+                commands += ESC + 'a' + '\x02'; // Right align
+                commands += ESC + 'E' + '\x01'; // Bold on
+                commands += `Total: ${parseFloat(receiptData.total).toFixed(2)}\n`;
+                commands += ESC + 'E' + '\x00'; // Bold off
+                commands += ESC + 'a' + '\x00'; // Left align
+                commands += '--------------------------------\n\n';
+                
+                // Footer
+                commands += ESC + 'a' + '\x01'; // Center align
+                commands += receiptData.footerMessage || 'Thank You & See You Again';
+                commands += '\n\n\n';
+                
+                // Cut paper
+                commands += GS + 'V' + '\x01';
+                
+                return commands;
+            }
+
+            async print(receiptData) {
+                try {
+                    if (!this.isConnected) {
+                        this.log('🔄 Not connected, attempting to connect...');
+                        await this.connect();
+                    }
+
+                    if (this.isTestMode || (this.device && this.device.mock)) {
+                        this.log('🧪 TEST MODE: Printing receipt...');
+                        
+                        let output = '\n=== THERMAL RECEIPT ===\n';
+                        output += receiptData.restaurantName + '\n';
+                        output += '================================\n';
+                        output += receiptData.address1 + '\n';
+                        output += receiptData.address2 + '\n\n';
+                        output += `Order Type : ${receiptData.orderType}\n`;
+                        if (receiptData.tableNumber) {
+                            output += `Table No   : ${receiptData.tableNumber}\n`;
+                        }
+                        
+                        // Split date and time for better formatting
+                        const dateTime = receiptData.dateTime || new Date().toLocaleString();
+                        const [datePart, timePart] = dateTime.includes(',') ? 
+                          dateTime.split(', ') : 
+                          [dateTime.split(' ').slice(0, 3).join(' '), dateTime.split(' ').slice(3).join(' ')];
+                        
+                        output += `Date       : ${datePart}\n`;
+                        output += `Time       : ${timePart}\n`;
+                        output += `Order ID   : ${receiptData.orderId}\n\n`;
+                        output += 'Item            Qty     Price\n';
+                        output += '--------------------------------\n';
+                        
+                        receiptData.items?.forEach(item => {
+                            let itemName = item.name || '';
+                            
+                            // Show Myanmar to English conversion for display
+                            if (this.containsBurmese(itemName)) {
+                                const originalName = itemName;
+                                const englishName = this.convertMyanmarToPhonetic(itemName);
+                                output += `${originalName} → ${englishName}\n`;
+                                itemName = englishName;
+                            }
+                            
+                            if (itemName.length > 15) {
+                                itemName = itemName.substring(0, 12) + '...';
+                            }
+                            
+                            const qty = String(item.quantity || 1);
+                            const price = `${parseFloat(item.price || 0).toFixed(2)}`;
+                            
+                            const paddedName = itemName.padEnd(15).substring(0, 15);
+                            const paddedQty = qty.padStart(3);
+                            const paddedPrice = price.padStart(8);
+                            
+                            output += `${paddedName} ${paddedQty} ${paddedPrice}\n`;
+                        });
+                        
+                        output += '--------------------------------\n';
+                        output += `Total: ${parseFloat(receiptData.total).toFixed(2)}\n`;
+                        output += '================================\n';
+                        output += receiptData.footerMessage + '\n';
+                        
+                        console.log(output);
+                        this.log('✅ TEST PRINT completed!');
+                        alert('✅ Test print successful!\nCheck console for formatted output.');
+                        return true;
+                    }
+
+                    this.log('🖨️ Sending to real printer...');
+                    const commands = await this.formatReceiptForThermalPrint(receiptData);
+                    const encoder = new TextEncoder('utf-8');
+                    const data = encoder.encode(commands);
+                    
+                    const chunkSize = 20;
+                    for (let i = 0; i < data.length; i += chunkSize) {
+                        const chunk = data.slice(i, i + chunkSize);
+                        await this.characteristic.writeValue(chunk);
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                    }
+                    
+                    this.log('✅ Receipt printed successfully!');
+                    return true;
+                } catch (error) {
+                    this.log('❌ Print failed: ' + error.message);
+                    throw error;
+                }
+            }
+
+            async disconnect() {
+                this.autoReconnect = false;
+                
+                if (this.isTestMode) {
+                    this.log('🧪 TEST MODE: Mock printer disconnected');
+                    this.device = null;
+                    this.isConnected = false;
+                    return;
+                }
+
+                if (this.device && this.device.gatt && this.device.gatt.connected) {
+                    await this.device.gatt.disconnect();
+                    this.log('📡 Bluetooth printer disconnected');
+                    this.isConnected = false;
+                }
+            }
+
+            checkConnection() {
+                if (this.isTestMode) return true;
+                return this.isConnected && this.device && this.device.gatt && this.device.gatt.connected;
+            }
+        }
+
+        // Global printer instance
+        let printer = new BluetoothThermalPrinter();
+
+        // UI functions
+        function updateUI() {
+            const isConnected = printer.checkConnection();
+            const statusDiv = document.getElementById('status');
+            const connectBtn = document.getElementById('connectBtn');
+            const printBtn = document.getElementById('printBtn');
+            const printBurmeseBtn = document.getElementById('printBurmeseBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+
+            if (isConnected) {
+                statusDiv.textContent = '✅ Status: Connected';
+                statusDiv.className = 'status connected';
+                connectBtn.disabled = true;
+                printBtn.disabled = false;
+                printBurmeseBtn.disabled = false;
+                disconnectBtn.disabled = false;
+            } else {
+                statusDiv.textContent = '📡 Status: Not Connected';
+                statusDiv.className = 'status disconnected';
+                connectBtn.disabled = false;
+                printBtn.disabled = true;
+                printBurmeseBtn.disabled = true;
+                disconnectBtn.disabled = true;
+            }
+        }
+
+        window.connectPrinter = async function() {
+            try {
+                await printer.connect();
+                updateUI();
+            } catch (error) {
+                alert('Connection failed: ' + error.message);
+            }
+        };
+
+        window.printTestReceipt = async function() {
+            const receiptData = {
+                restaurantName: "TAMARMYAY RESTAURANT",
+                address1: "52/345-2 Ek Prachim Road, Lak Hok,",
+                address2: "Pathum Thani, 12000",
+                orderType: "Dine-in",
+                tableNumber: "5",
+                dateTime: new Date().toLocaleString(),
+                orderId: "TEST001",
+                items: [
+                    { name: "Chicken Fried Rice", quantity: 2, price: "75.00" },
+                    { name: "Pad Thai", quantity: 1, price: "65.00" },
+                    { name: "Thai Iced Tea", quantity: 2, price: "35.00" }
+                ],
+                total: "250",
+                paymentMethod: "Cash",
+                footerMessage: "Thank You & See You Again"
+            };
+
+            try {
+                await printer.print(receiptData);
+            } catch (error) {
+                alert('Print failed: ' + error.message);
+            }
+        };
+
+        window.printBurmeseTest = async function() {
+            const receiptData = {
+                restaurantName: "TAMARMYAY RESTAURANT",
+                address1: "52/345-2 Ek Prachim Road, Lak Hok,",
+                address2: "Pathum Thani, 12000",
+                orderType: "Dine-in",
+                tableNumber: "3",
+                dateTime: new Date().toLocaleString(),
+                orderId: "BURMESE001",
+                items: [
+                    { name: "ကြက်သား", quantity: 2, price: "150.00" },
+                    { name: "ထမင်း", quantity: 1, price: "30.00" },
+                    { name: "လက်ဖက်ရည်", quantity: 1, price: "25.00" }
+                ],
+                total: "205",
+                paymentMethod: "Card",
+                footerMessage: "Thank You & See You Again"
+            };
+
+            try {
+                await printer.print(receiptData);
+            } catch (error) {
+                alert('Print failed: ' + error.message);
+            }
+        };
+
+        window.disconnectPrinter = async function() {
+            try {
+                await printer.disconnect();
+                updateUI();
+            } catch (error) {
+                alert('Disconnect failed: ' + error.message);
+            }
+        };
+
+        // Initialize UI
+        updateUI();
+    </script>
+</body>
+</html>

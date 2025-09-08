@@ -1,21 +1,44 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { usePrinter } from "../contexts/PrinterContext";
 
 function Login({ onLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  
+  const { connectPrinter, connectionStatus } = usePrinter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoggingIn(true);
+    
     try {
+      // Step 1: Authenticate user
       const res = await axios.post(
         "https://tamarmyaybackend-last.onrender.com/api/auth/login",
         { username, password }
       );
+      
+      // Step 2: Attempt to connect to printer after successful login
+      try {
+        console.log('🔄 Attempting to connect to Bluetooth printer...');
+        await connectPrinter();
+        console.log('✅ Printer connected successfully on login!');
+      } catch (printerError) {
+        console.log('⚠️ Printer connection failed on login, but continuing. User can connect manually later.');
+        console.error(printerError);
+        // Don't block login if printer connection fails
+      }
+      
+      // Step 3: Complete login
       onLogin(res.data.token);
+      
     } catch (err) {
       setError(err.response?.data?.error || "Login failed");
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -71,9 +94,19 @@ function Login({ onLogin }) {
           </div>
           <button
             type="submit"
-            className="w-[120px] sm:w-[132px] h-10 sm:h-[50px] mx-auto flex items-center justify-center rounded-[20px] border border-gray-500 bg-gray-200/50 text-black font-nunito text-lg sm:text-xl font-semibold capitalize shadow-md hover:bg-gray-300 active:bg-gray-300 active:text-white active:border-none"
+            disabled={isLoggingIn}
+            className={`w-[120px] sm:w-[132px] h-10 sm:h-[50px] mx-auto flex items-center justify-center rounded-[20px] border border-gray-500 bg-gray-200/50 text-black font-nunito text-lg sm:text-xl font-semibold capitalize shadow-md hover:bg-gray-300 active:bg-gray-300 active:text-white active:border-none ${
+              isLoggingIn ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
-            Confirm
+            {isLoggingIn ? (
+              <>
+                <span className="mr-2">🔄</span>
+                {connectionStatus === 'connecting' ? 'Connecting...' : 'Logging in...'}
+              </>
+            ) : (
+              'Confirm'
+            )}
           </button>
         </form>
       </div>

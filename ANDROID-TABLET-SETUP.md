@@ -7,8 +7,8 @@
    npm run build
    ```
 2. Drag build folder to netlify.com
-3. Get your app URL (e.g., yourapp.netlify.app)
-
+3. Getetlify.app)
+ your app URL (e.g., yourapp.n
 ### Step 2: Configure Android Tablet
 1. Open Chrome on tablet
 2. Go to your netlify URL

@@ -5,254 +5,271 @@ class BluetoothThermalPrinter {
     this.server = null;
     this.service = null;
     this.characteristic = null;
-    this.isTestMode = !navigator.bluetooth; // Auto-enable test mode if no Bluetooth API
+    this.isTestMode = !navigator.bluetooth;
+    this.isConnected = false;
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 3;
+    this.autoReconnect = true;
   }
 
   async connect() {
     try {
-      // Test mode - simulate connection
       if (this.isTestMode || !navigator.bluetooth) {
-        console.log('🧪 TEST MODE: Simulating Bluetooth printer connection...');
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate connection delay
-        console.log('✅ TEST MODE: Mock Bluetooth printer connected!');
+        console.log('TEST MODE: Simulating connection...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
         this.device = { mock: true };
+        this.isConnected = true;
         return true;
       }
 
-      // Real Bluetooth connection
-      console.log('Requesting Bluetooth device...');
-      
+      if (this.isConnected && this.device && this.device.gatt && this.device.gatt.connected) {
+        console.log('Already connected to:', this.device.name);
+        return true;
+      }
+
       this.device = await navigator.bluetooth.requestDevice({
         filters: [
-          { services: ['000018f0-0000-1000-8000-00805f9b34fb'] }, // Standard thermal printer service
-          { namePrefix: 'MTP-' }, // Many thermal printers start with MTP
-          { namePrefix: 'POS-' }, // POS printers
-          { namePrefix: 'BTP-' }, // Bluetooth thermal printer
+          { services: ['000018f0-0000-1000-8000-00805f9b34fb'] },
+          { namePrefix: 'XP-' },
+          { namePrefix: 'MTP-' },
+          { namePrefix: 'POS-' },
         ],
         optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
       });
 
-      console.log('Connecting to GATT server...');
       this.server = await this.device.gatt.connect();
-
-      console.log('Getting service...');
       this.service = await this.server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
-
-      console.log('Getting characteristic...');
       this.characteristic = await this.service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
-
-      console.log('✅ Real Bluetooth printer connected successfully!');
+      
+      this.isConnected = true;
       return true;
     } catch (error) {
-      console.error('❌ Bluetooth connection failed:', error);
-      
-      // Fallback to test mode
-      console.log('🧪 Falling back to TEST MODE...');
-      this.isTestMode = true;
-      this.device = { mock: true };
-      return true;
+      console.error('Connection failed:', error);
+      this.isConnected = false;
+      throw error;
     }
   }
 
   async disconnect() {
+    this.autoReconnect = false; // Disable auto-reconnect for manual disconnection
+    
     if (this.isTestMode) {
       console.log('🧪 TEST MODE: Mock printer disconnected');
       this.device = null;
+      this.isConnected = false;
       return;
     }
 
     if (this.device && this.device.gatt && this.device.gatt.connected) {
       await this.device.gatt.disconnect();
-      console.log('Bluetooth printer disconnected');
+      console.log('📡 Bluetooth printer disconnected from session');
+      this.isConnected = false;
     }
   }
 
-  // Convert text to thermal printer commands (ESC/POS)
-  formatReceiptForThermalPrint(receiptData) {
+  containsBurmese(text) {
+    return /[\u1000-\u109F\uAA60-\uAA7F]/.test(text);
+  }
+
+  convertMyanmarToPhonetic(text) {
+    const myanmarToEnglish = {
+      'ကြက်သား': 'Chicken',
+      'ဝက်သား': 'Pork', 
+      'ငါး': 'Fish',
+      'ထမင်း': 'Rice',
+      'လက်ဖက်ရည်': 'Tea',
+      'ကော်ဖီ': 'Coffee',
+      'မုန်လာဥနီ': 'Monlani',
+      'ကြက်ဥ': 'Egg',
+      'ချက်ခင်း': 'Fried',
+      'အသား': 'Meat',
+      'အမဲသား': 'Beef',
+      'ရေ': 'Water',
+      'ပုဇွန်': 'Shrimp',
+      'ဟင်း': 'Curry'
+
+    };
+    
+    if (myanmarToEnglish[text]) {
+      return myanmarToEnglish[text];
+    }
+    
+    for (const [myanmar, english] of Object.entries(myanmarToEnglish)) {
+      if (text.includes(myanmar)) {
+        return text.replace(myanmar, english);
+      }
+    }
+    
+    const simplified = text.replace(/[\u1000-\u109F\uAA60-\uAA7F]/g, '');
+    return simplified.trim().length > 0 ? simplified.trim() : 'Item';
+  }
+
+  async formatReceiptForThermalPrint(receiptData) {
     const ESC = '\x1B';
     const GS = '\x1D';
     
     let commands = '';
+    commands += ESC + '@';
+    commands += ESC + 't' + '\x00';
     
-    // Initialize printer
-    commands += ESC + '@'; // Initialize
-    
-    // Header - Center align and bold
-    commands += ESC + 'a' + '\x01'; // Center align
-    commands += ESC + 'E' + '\x01'; // Bold on
+    // Header
+    commands += ESC + 'a' + '\x01';
+    commands += ESC + 'E' + '\x01';
     commands += receiptData.restaurantName || 'TAMARMYAY RESTAURANT';
     commands += '\n';
-    commands += ESC + 'E' + '\x00'; // Bold off
+    commands += ESC + 'E' + '\x00';
     commands += '================================\n';
     
-    // Address
     commands += (receiptData.address1 || '52/345-2 Ek Prachim Road, Lak Hok,') + '\n';
-    commands += (receiptData.address2 || 'Pathum Thani, 12000') + '\n';
-    commands += '\n';
+    commands += (receiptData.address2 || 'Pathum Thani, 12000') + '\n\n';
     
-    // Order details - Left align
-    commands += ESC + 'a' + '\x00'; // Left align
-    commands += `Order Type: ${receiptData.orderType}\n`;
+    // Order details with colon alignment
+    commands += ESC + 'a' + '\x00';
+    commands += `Order Type : ${receiptData.orderType}\n`;
     if (receiptData.tableNumber) {
-      commands += `Table No: ${receiptData.tableNumber}\n`;
-    }
-    commands += `Date & Time: ${receiptData.dateTime}\n`;
-    commands += `Order ID: ${receiptData.orderId}\n`;
-    
-    // Customer info for delivery
-    if (receiptData.customerName) {
-      commands += `Customer: ${receiptData.customerName}\n`;
-    }
-    if (receiptData.buildingName) {
-      commands += `Building: ${receiptData.buildingName}\n`;
+      commands += `Table No   : ${receiptData.tableNumber}\n`;
     }
     
-    commands += '\n';
+    const dateTime = receiptData.dateTime || new Date().toLocaleString();
+    const [datePart, timePart] = dateTime.includes(',') ? 
+      dateTime.split(', ') : 
+      [dateTime.split(' ').slice(0, 3).join(' '), dateTime.split(' ').slice(3).join(' ')];
+    
+    commands += `Date       : ${datePart}\n`;
+    commands += `Time       : ${timePart}\n`;
+    commands += `Order ID   : ${receiptData.orderId}\n\n`;
+    
     commands += '--------------------------------\n';
-    commands += 'Item                Qty    Price\n';
+    commands += 'Item            Qty     Price\n';
     commands += '--------------------------------\n';
     
-    // Items
     receiptData.items?.forEach(item => {
-      const name = this.truncateText(item.name, 15);
-      const qty = item.quantity.toString().padStart(3);
-      const price = `${parseFloat(item.price).toFixed(2)} B`.padStart(8);
-      commands += `${name.padEnd(15)} ${qty} ${price}\n`;
+      let itemName = item.name || '';
+      
+      if (this.containsBurmese(itemName)) {
+        itemName = this.convertMyanmarToPhonetic(itemName);
+      }
+      
+      if (itemName.length > 15) {
+        itemName = itemName.substring(0, 12) + '...';
+      }
+      
+      const qty = String(item.quantity || 1);
+      const price = `${parseFloat(item.price || 0).toFixed(2)}`;
+      
+      const paddedName = itemName.padEnd(15).substring(0, 15);
+      const paddedQty = qty.padStart(3);
+      const paddedPrice = price.padStart(8);
+      
+      commands += `${paddedName} ${paddedQty} ${paddedPrice}\n`;
     });
     
     commands += '--------------------------------\n';
+    commands += ESC + 'a' + '\x02';
+    commands += ESC + 'E' + '\x01';
+    commands += `Total: ${parseFloat(receiptData.total).toFixed(2)}\n`;
+    commands += ESC + 'E' + '\x00';
+    commands += ESC + 'a' + '\x00';
+    commands += '--------------------------------\n\n';
     
-    // Total - Right align
-    commands += ESC + 'a' + '\x02'; // Right align
-    commands += ESC + 'E' + '\x01'; // Bold on
-    commands += `Total: ${parseFloat(receiptData.total).toFixed(2)} B\n`;
-    commands += ESC + 'E' + '\x00'; // Bold off
-    commands += ESC + 'a' + '\x00'; // Left align
-    commands += '--------------------------------\n';
-    
-    // Payment method
-    if (receiptData.paymentMethod) {
-      commands += `Payment: ${receiptData.paymentMethod}\n`;
-    }
-    
-    // Customer note
-    if (receiptData.customerNote && receiptData.customerNote.trim()) {
-      commands += `Note: ${receiptData.customerNote}\n`;
-    }
-    
-    commands += '\n';
-    
-    // Footer - Center align
-    commands += ESC + 'a' + '\x01'; // Center align
+    commands += ESC + 'a' + '\x01';
     commands += receiptData.footerMessage || 'Thank You & See You Again';
     commands += '\n\n\n';
     
-    // Cut paper
-    commands += GS + 'V' + '\x01'; // Partial cut
+    commands += GS + 'V' + '\x01';
     
     return commands;
   }
 
-  // Convert receipt to readable format for testing
-  formatReceiptForConsole(receiptData) {
-    let output = '\n';
-    output += '='.repeat(32) + '\n';
-    output += '      ' + (receiptData.restaurantName || 'TAMARMYAY RESTAURANT') + '\n';
-    output += '='.repeat(32) + '\n';
-    output += '\n';
-    output += (receiptData.address1 || '52/345-2 Ek Prachim Road, Lak Hok,') + '\n';
-    output += (receiptData.address2 || 'Pathum Thani, 12000') + '\n';
-    output += '\n';
-    output += `Order Type: ${receiptData.orderType}\n`;
-    if (receiptData.tableNumber) {
-      output += `Table No: ${receiptData.tableNumber}\n`;
-    }
-    output += `Date & Time: ${receiptData.dateTime}\n`;
-    output += `Order ID: ${receiptData.orderId}\n`;
-    
-    if (receiptData.customerName) {
-      output += `Customer: ${receiptData.customerName}\n`;
-    }
-    if (receiptData.buildingName) {
-      output += `Building: ${receiptData.buildingName}\n`;
-    }
-    
-    output += '\n';
-    output += '-'.repeat(32) + '\n';
-    output += 'Item                Qty    Price\n';
-    output += '-'.repeat(32) + '\n';
-    
-    receiptData.items?.forEach(item => {
-      const name = this.truncateText(item.name, 15);
-      const qty = item.quantity.toString().padStart(3);
-      const price = `${parseFloat(item.price).toFixed(2)} B`.padStart(8);
-      output += `${name.padEnd(15)} ${qty} ${price}\n`;
-    });
-    
-    output += '-'.repeat(32) + '\n';
-    output += `Total: ${parseFloat(receiptData.total).toFixed(2)} B`.padStart(32) + '\n';
-    output += '-'.repeat(32) + '\n';
-    
-    if (receiptData.paymentMethod) {
-      output += `Payment: ${receiptData.paymentMethod}\n`;
-    }
-    
-    if (receiptData.customerNote && receiptData.customerNote.trim()) {
-      output += `Note: ${receiptData.customerNote}\n`;
-    }
-    
-    output += '\n';
-    output += '   ' + (receiptData.footerMessage || 'Thank You & See You Again') + '\n';
-    output += '\n\n';
-    
-    return output;
-  }
-
-  truncateText(text, maxLength) {
-    return text.length > maxLength ? text.substring(0, maxLength - 3) + '...' : text;
-  }
-
   async print(receiptData) {
     try {
+      // Check connection first, auto-connect if needed
+      if (!this.checkConnection()) {
+        console.log('🔄 Printer not connected, attempting to connect...');
+        await this.connect();
+      }
+
       if (this.isTestMode || (this.device && this.device.mock)) {
-        // Test mode - show receipt in console and alert
-        console.log('🧪 TEST MODE: Printing receipt...');
+        console.log('TEST MODE: Printing receipt...');
+        let output = '\n=== THERMAL RECEIPT ===\n';
+        output += receiptData.restaurantName + '\n';
+        output += '================================\n';
+        output += receiptData.address1 + '\n';
+        output += receiptData.address2 + '\n\n';
+        output += `Order Type : ${receiptData.orderType}\n`;
+        if (receiptData.tableNumber) {
+          output += `Table No   : ${receiptData.tableNumber}\n`;
+        }
         
-        const readableReceipt = this.formatReceiptForConsole(receiptData);
-        console.log(readableReceipt);
+        const dateTime = receiptData.dateTime || new Date().toLocaleString();
+        const [datePart, timePart] = dateTime.includes(',') ? 
+          dateTime.split(', ') : 
+          [dateTime.split(' ').slice(0, 3).join(' '), dateTime.split(' ').slice(3).join(' ')];
         
-        // Show receipt in a modal-like alert
-        const shortReceipt = `📄 RECEIPT PREVIEW:\n\n${receiptData.restaurantName || 'TAMARMYAY RESTAURANT'}\nOrder ${receiptData.orderId}\nTable ${receiptData.tableNumber || 'N/A'}\nTotal: ${receiptData.total} B\n\n✅ Would print to thermal printer!`;
+        output += `Date       : ${datePart}\n`;
+        output += `Time       : ${timePart}\n`;
+        output += `Order ID   : ${receiptData.orderId}\n\n`;
+        output += 'Item            Qty     Price\n';
+        output += '--------------------------------\n';
         
-        alert(shortReceipt);
+        receiptData.items?.forEach(item => {
+          let itemName = item.name || '';
+          
+          if (this.containsBurmese(itemName)) {
+            const originalName = itemName;
+            const englishName = this.convertMyanmarToPhonetic(itemName);
+            output += `${originalName} → ${englishName}\n`;
+            itemName = englishName;
+          }
+          
+          if (itemName.length > 15) {
+            itemName = itemName.substring(0, 12) + '...';
+          }
+          
+          const qty = String(item.quantity || 1);
+          const price = `${parseFloat(item.price || 0).toFixed(2)}`;
+          
+          const paddedName = itemName.padEnd(15).substring(0, 15);
+          const paddedQty = qty.padStart(3);
+          const paddedPrice = price.padStart(8);
+          
+          output += `${paddedName} ${paddedQty} ${paddedPrice}\n`;
+        });
         
-        console.log('✅ TEST MODE: Receipt printed successfully!');
+        output += '--------------------------------\n';
+        output += `Total: ${parseFloat(receiptData.total).toFixed(2)}\n`;
+        output += '================================\n';
+        output += receiptData.footerMessage + '\n';
+        
+        console.log(output);
         return true;
       }
 
-      // Real printer mode
-      if (!this.characteristic) {
-        throw new Error('Printer not connected');
-      }
-
-      const commands = this.formatReceiptForThermalPrint(receiptData);
-      const encoder = new TextEncoder();
+      // Real printer - connection is already verified above
+      const commands = await this.formatReceiptForThermalPrint(receiptData);
+      const encoder = new TextEncoder('utf-8');
       const data = encoder.encode(commands);
       
-      // Send data in chunks (some printers have buffer limits)
       const chunkSize = 20;
       for (let i = 0; i < data.length; i += chunkSize) {
         const chunk = data.slice(i, i + chunkSize);
         await this.characteristic.writeValue(chunk);
-        await new Promise(resolve => setTimeout(resolve, 10)); // Small delay between chunks
+        await new Promise(resolve => setTimeout(resolve, 10));
       }
       
-      console.log('✅ Receipt printed successfully via Bluetooth!');
+      console.log('✅ Receipt printed successfully on persistent connection!');
       return true;
     } catch (error) {
-      console.error('❌ Print failed:', error);
+      console.error('Print failed:', error);
+      // If printing failed, mark as disconnected so next print will try to reconnect
+      this.isConnected = false;
       throw error;
     }
+  }
+
+  checkConnection() {
+    if (this.isTestMode) return true;
+    return this.isConnected && this.device && this.device.gatt && this.device.gatt.connected;
   }
 }
 
