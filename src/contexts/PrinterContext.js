@@ -8,10 +8,33 @@ export function PrinterProvider({ children }) {
   const [isConnected, setIsConnected] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('disconnected'); // disconnected, connecting, connected, error
 
-  // Initialize printer instance once
+  // Initialize printer instance once with PWA enhancements
   useEffect(() => {
     const printerInstance = new BluetoothThermalPrinter();
     setPrinter(printerInstance);
+
+    // PWA-specific enhancements for better printer connectivity
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      console.log('🚀 PWA mode detected - Enhanced printer connectivity enabled');
+      
+      // Better connection persistence in PWA mode
+      const handleVisibilityChange = () => {
+        if (!document.hidden && printerInstance) {
+          // Re-check connection when app becomes visible (iPad switching between apps)
+          setTimeout(() => {
+            const stillConnected = printerInstance.checkConnection();
+            setIsConnected(stillConnected);
+            setConnectionStatus(stillConnected ? 'connected' : 'disconnected');
+          }, 1000);
+        }
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
+    }
   }, []);
 
   // Connect to printer

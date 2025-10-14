@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { usePrinter } from "../contexts/PrinterContext";
+import PWAInstallPrompt from "./PWAInstallPrompt";
 
 function Invoice({ token }) {
   const [order, setOrder] = useState(null);
@@ -149,6 +150,9 @@ function Invoice({ token }) {
     }
   };
 
+  // Detect if running on iOS
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
   const handlePrint = async () => {
     if (!order) {
       setError("No order to print");
@@ -185,21 +189,37 @@ function Invoice({ token }) {
     };
 
     try {
-      // Use global printer context for printing
+      // Use global printer context for printing (handles iOS automatically)
       await printReceipt(receiptData);
-      alert('✅ Receipt printed successfully!');
+      
+      if (isIOS) {
+        alert('✅ Receipt sent to print queue! Check your iPad\'s print preview or AirPrint dialog.');
+      } else {
+        alert('✅ Receipt printed successfully!');
+      }
       return;
     } catch (error) {
       console.error('Print failed:', error);
       setError(`Print failed: ${error.message}`);
       
-      // Fallback to browser print
-      const fallbackChoice = window.confirm(
-        `Thermal printing failed: ${error.message}\n\nWould you like to print using browser instead?`
-      );
-      
-      if (fallbackChoice) {
-        window.print();
+      // iOS-specific fallback message
+      if (isIOS) {
+        const fallbackChoice = window.confirm(
+          `Bluetooth printing failed on iPad.\n\nOptions:\n1. Use Safari's built-in print (recommended)\n2. Try connecting printer via Settings > Bluetooth first\n\nWould you like to use Safari print now?`
+        );
+        
+        if (fallbackChoice) {
+          window.print();
+        }
+      } else {
+        // Non-iOS fallback
+        const fallbackChoice = window.confirm(
+          `Thermal printing failed: ${error.message}\n\nWould you like to print using browser instead?`
+        );
+        
+        if (fallbackChoice) {
+          window.print();
+        }
       }
     }
   };
@@ -265,6 +285,7 @@ function Invoice({ token }) {
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center uppercase underline my-6 sm:my-8 md:my-12 print:hidden">
           Check Bills
         </h2>
+        <PWAInstallPrompt />
         {error && (
           <p className="text-red-500 text-center mb-4 text-sm sm:text-base print:hidden">
             {error}
@@ -401,29 +422,54 @@ function Invoice({ token }) {
                 />
               </div>
               <div className="flex flex-col gap-3 sm:gap-4">
+                {/* Show iPad-specific instructions */}
+                {isIOS && (
+                  <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 text-xs sm:text-sm mb-2">
+                    <p className="font-semibold text-blue-800">🍎 iPad Printing:</p>
+                    <p className="text-blue-700">
+                      • Try Bluetooth first, or use Safari print<br/>
+                      • For best results: Settings → Bluetooth → Connect your Xprinter
+                    </p>
+                  </div>
+                )}
+                
                 <button
                   onClick={connectBluetoothPrinter}
                   className={`w-full max-w-[150px] h-10 sm:h-12 rounded-[20px] font-semibold text-sm sm:text-base ${
                     isPrinterConnected 
                       ? 'bg-green-500 text-white' 
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                      : isIOS 
+                        ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
                   }`}
                   disabled={isPrinterConnected}
                 >
-                  {isPrinterConnected ? '✅ Connected' : '📱 Connect Printer'}
+                  {isPrinterConnected ? '✅ Connected' : isIOS ? '🍎 Connect XPrinter' : '📱 Connect Printer'}
                 </button>
+                
                 <button
                   onClick={handleCheckout}
                   className="w-full max-w-[150px] h-10 sm:h-12 bg-[#DCC99B]/70 text-black rounded-[20px] font-semibold hover:bg-[#DCC99B]/80 text-sm sm:text-base"
                 >
                   Complete Order
                 </button>
+                
                 <button
                   onClick={handlePrint}
                   className="w-full max-w-[150px] h-10 sm:h-12 bg-[#DCC99B]/70 text-black rounded-[20px] font-semibold hover:bg-[#DCC99B]/80 text-sm sm:text-base"
                 >
-                  🖨️ Print Receipt
+                  {isIOS ? '🍎 Print Receipt' : '🖨️ Print Receipt'}
                 </button>
+                
+                {/* iPad-specific Safari print button */}
+                {isIOS && (
+                  <button
+                    onClick={() => window.print()}
+                    className="w-full max-w-[150px] h-8 sm:h-10 bg-orange-500 text-white rounded-[15px] font-semibold hover:bg-orange-600 text-xs sm:text-sm"
+                  >
+                    📄 Safari Print
+                  </button>
+                )}
               </div>
             </div>
           </div>

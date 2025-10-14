@@ -10,6 +10,7 @@ class BluetoothThermalPrinter {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 3;
     this.autoReconnect = true;
+    this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   }
 
   async connect() {
@@ -20,6 +21,14 @@ class BluetoothThermalPrinter {
         this.device = { mock: true };
         this.isConnected = true;
         return true;
+      }
+
+      // iOS-specific handling
+      if (this.isIOS) {
+        console.log('🍎 iOS detected - using iOS-compatible connection method...');
+        if (!navigator.bluetooth) {
+          throw new Error('Bluetooth Web API not supported on this iOS version. Please use Safari browser or try alternative printing methods.');
+        }
       }
 
       if (this.isConnected && this.device && this.device.gatt && this.device.gatt.connected) {
@@ -46,6 +55,12 @@ class BluetoothThermalPrinter {
     } catch (error) {
       console.error('Connection failed:', error);
       this.isConnected = false;
+      
+      // iOS-specific error handling
+      if (this.isIOS) {
+        throw new Error(`iOS Bluetooth connection failed: ${error.message}. Consider using AirPrint fallback or browser printing.`);
+      }
+      
       throw error;
     }
   }
@@ -181,12 +196,104 @@ class BluetoothThermalPrinter {
     return commands;
   }
 
+  // iOS-specific AirPrint fallback
+  async printWithAirPrint(receiptData) {
+    return new Promise((resolve, reject) => {
+      try {
+        // Create a formatted receipt for browser printing
+        const receiptHTML = this.createPrintableHTML(receiptData);
+        
+        // Create new window for printing
+        const printWindow = window.open('', '_blank', 'width=300,height=600');
+        printWindow.document.write(receiptHTML);
+        printWindow.document.close();
+        
+        // Auto-print and close
+        printWindow.onload = () => {
+          printWindow.print();
+          printWindow.onafterprint = () => {
+            printWindow.close();
+            resolve(true);
+          };
+        };
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  createPrintableHTML(receiptData) {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Receipt</title>
+        <style>
+          @media print {
+            body { margin: 0; font-family: 'Courier New', monospace; font-size: 12px; }
+            .receipt { width: 300px; margin: 0 auto; }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            .line { border-bottom: 1px dashed #000; margin: 5px 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="receipt">
+          <div class="center bold">${receiptData.restaurantName || 'TAMARMYAY RESTAURANT'}</div>
+          <div class="line"></div>
+          <div class="center">${receiptData.address1 || '52/345-2 Ek Prachim Road, Lak Hok,'}</div>
+          <div class="center">${receiptData.address2 || 'Pathum Thani, 12000'}</div>
+          <br>
+          <div>Order Type: ${receiptData.orderType}</div>
+          ${receiptData.tableNumber ? `<div>Table No: ${receiptData.tableNumber}</div>` : ''}
+          <div>Date: ${receiptData.dateTime}</div>
+          <div>Order ID: ${receiptData.orderId}</div>
+          <div class="line"></div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>Item</span><span>Qty</span><span>Price</span>
+          </div>
+          <div class="line"></div>
+          ${receiptData.items?.map(item => `
+            <div style="display: flex; justify-content: space-between;">
+              <span style="flex: 1;">${item.name}</span>
+              <span style="width: 30px; text-align: center;">${item.quantity}</span>
+              <span style="width: 60px; text-align: right;">${item.price}</span>
+            </div>
+          `).join('') || ''}
+          <div class="line"></div>
+          <div style="text-align: right;" class="bold">Total: ${receiptData.total}</div>
+          <div class="line"></div>
+          <div class="center">${receiptData.footerMessage || 'Thank You & See You Again'}</div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
   async print(receiptData) {
     try {
-      // Check connection first, auto-connect if needed
-      if (!this.checkConnection()) {
-        console.log('🔄 Printer not connected, attempting to connect...');
-        await this.connect();
+      // iOS-specific handling
+      if (this.isIOS) {
+        console.log('🍎 iOS detected - attempting Bluetooth first, then AirPrint fallback...');
+        
+        try {
+          // Try Bluetooth first
+          if (!this.checkConnection()) {
+            console.log('🔄 Printer not connected, attempting to connect...');
+            await this.connect();
+          }
+        } catch (bluetoothError) {
+          console.warn('🍎 iOS Bluetooth failed, falling back to AirPrint:', bluetoothError);
+          return await this.printWithAirPrint(receiptData);
+        }
+      } else {
+        // Non-iOS: Check connection first, auto-connect if needed
+        if (!this.checkConnection()) {
+          console.log('🔄 Printer not connected, attempting to connect...');
+          await this.connect();
+        }
       }
 
       if (this.isTestMode || (this.device && this.device.mock)) {

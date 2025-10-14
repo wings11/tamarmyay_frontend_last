@@ -1,6 +1,14 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "name": "Tamarmyay Restaurant POS",
+  "short_name": "Tamarmyay POS",
+  "description": "Restaurant Point of Sale System with printer Support for iPad",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFCF1",
+  "theme_color": "#DCC99B",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en-US",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,16 +18,33 @@
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "logo512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "type": "image/png", 
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "categories": ["business", "accounting", "food"],
+  "prefer_related_applications": false,
+  "screenshots": [
+    {
+      "src": "logo512.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Restaurant POS Interface"
+    }
+  ],
+  "features": [
+    "bluetooth",
+    "thermal-printing",
+    "offline-capable"
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }
