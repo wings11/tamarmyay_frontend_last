@@ -10,7 +10,7 @@ export function PrinterProvider({ children }) {
   const [isConnected, setIsConnected] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('disconnected'); // disconnected, connecting, connected, error
   const [printServerAvailable, setPrintServerAvailable] = useState(false);
-  const [preferredMethod, setPreferredMethod] = useState('bluetooth'); // Default to Bluetooth (known working method)
+  const [preferredMethod, setPreferredMethod] = useState('bluetooth'); // Default to working method
 
   // Initialize printer instances with PWA enhancements
   useEffect(() => {

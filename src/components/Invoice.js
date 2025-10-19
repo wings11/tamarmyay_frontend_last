@@ -426,15 +426,44 @@ function Invoice({ token }) {
                 />
               </div>
               <div className="flex flex-col gap-3 sm:gap-4">
-                {/* Simple printing status */}
-                <div className="bg-gray-100 border border-gray-300 rounded-lg p-3 text-xs sm:text-sm mb-3">
-                  <p className="font-semibold text-gray-800">🖨️ Printing Ready:</p>
-                  <div className="text-gray-700 mt-1">
-                    <p>• Direct Bluetooth: {isPrinterConnected ? '✅ Connected' : '❌ Not Connected'}</p>
-                    {printServerAvailable && (
-                      <p>• Network Bridge: ✅ Available</p>
+                {/* Simplified print status for iPad */}
+                <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 text-xs sm:text-sm mb-3">
+                  <p className="font-semibold text-blue-800">🖨️ Printing Status:</p>
+                  <div className="text-blue-700 mt-1">
+                    {isIOS ? (
+                      <>
+                        <p>🍎 <strong>iPad Mode:</strong> Optimized for Bluetooth printing</p>
+                        <p>• Bluetooth: {isPrinterConnected ? '✅ Connected' : '⚪ Ready to connect'}</p>
+                        <p>• Print Server: {printServerAvailable ? '✅ Available' : '⚪ Optional'}</p>
+                      </>
+                    ) : (
+                      <>
+                        <p>🖥️ <strong>Laptop Mode:</strong> Multiple options available</p>
+                        <p>• Bluetooth: {isPrinterConnected ? '✅ Connected' : '❌ Not Connected'}</p>
+                        <p>• Print Server: {printServerAvailable ? '✅ Available' : '❌ Not Available'}</p>
+                      </>
                     )}
+                    <p>• <strong>Current Method:</strong> {preferredMethod === 'bluetooth' ? '📱 Bluetooth' : preferredMethod === 'server' ? '🖥️ Server' : '🤖 Auto'}</p>
                   </div>
+                </div>
+
+                {/* Simplified method selector - optimized for iPad */}
+                <div className="mb-3">
+                  <label className="font-semibold text-sm underline mb-2 block">Print Method:</label>
+                  <select
+                    value={preferredMethod}
+                    onChange={(e) => setPrintingMethod(e.target.value)}
+                    className="w-full max-w-[200px] p-2 border rounded text-xs"
+                  >
+                    <option value="bluetooth">📱 Bluetooth (Recommended)</option>
+                    {printServerAvailable && <option value="server">🖥️ Laptop Server</option>}
+                    <option value="auto">🤖 Auto-Select Best</option>
+                  </select>
+                  {isIOS && (
+                    <p className="text-xs text-gray-600 mt-1">
+                      💡 iPad users: Bluetooth method works best with Xprinter XP-58IIH
+                    </p>
+                  )}
                 </div>
                 
                 <div className="flex gap-2">
@@ -447,7 +476,7 @@ function Invoice({ token }) {
                     }`}
                     disabled={isPrinterConnected}
                   >
-                  {isPrinterConnected ? '✅ Printer Ready' : '📱 Connect Printer'}
+                    {isPrinterConnected ? '✅ BT Connected' : '📱 Connect BT'}
                   </button>
                   
                   <button
@@ -471,9 +500,9 @@ function Invoice({ token }) {
                 
                 <button
                   onClick={handlePrint}
-                  className="w-full max-w-[150px] h-10 sm:h-12 bg-[#DCC99B]/70 text-black rounded-[20px] font-semibold hover:bg-[#DCC99B]/80 text-sm sm:text-base"
+                  className="w-full max-w-[200px] h-14 bg-green-600 text-white rounded-[20px] font-bold hover:bg-green-700 text-base shadow-lg"
                 >
-                  {isIOS ? '🍎 Print Receipt' : '🖨️ Print Receipt'}
+                  {isIOS ? '🍎 PRINT RECEIPT' : '🖨️ PRINT RECEIPT'}
                 </button>
                 
                 {/* iPad-specific Safari print button */}
