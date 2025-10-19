@@ -25,57 +25,76 @@ let printerStatus = 'disconnected';
 const initializePrinter = () => {
   try {
     const printerType = process.env.PRINTER_TYPE || 'USB';
+    console.log(`🖨️  Initializing ${printerType} printer...`);
     
-    if (NODE_ENV === 'production') {
-      console.log(`Initializing ${printerType} printer for production...`);
-      
-      switch (printerType.toLowerCase()) {
-        case 'usb':
-          // USB Printer Setup for Xprinter XP-58IIH
+    // Try to connect to USB printer regardless of environment
+    if (printerType.toLowerCase() === 'usb') {
+      try {
+        console.log('🔍 Searching for USB thermal printer...');
+        
+        // Try multiple USB detection methods for Xprinter XP-58IIH
+        let device;
+        
+        try {
+          // Method 1: Auto-detect USB printer
+          device = new escpos.USB();
+          console.log('📡 Auto-detection method: Found USB device');
+        } catch (autoError) {
+          console.log('⚠️  Auto-detection failed:', autoError.message);
+          
           try {
-            const device = new escpos.USB();
-            printer = new escpos.Printer(device, { encoding: 'GB18030' });
-            console.log('✅ USB Xprinter XP-58IIH configured successfully');
-          } catch (error) {
-            console.log('⚠️  USB printer not found, running in simulation mode');
-            printer = null;
+            // Method 2: Try specific vendor/product IDs for common thermal printers
+            // Common Xprinter vendor IDs: 0x0fe6, 0x1fc9, 0x04b8
+            device = new escpos.USB(0x0fe6); // Xprinter vendor ID
+            console.log('📡 Vendor ID method: Found Xprinter device');
+          } catch (vendorError) {
+            console.log('⚠️  Vendor ID method failed:', vendorError.message);
+            
+            // Method 3: Try alternative vendor IDs
+            try {
+              device = new escpos.USB(0x1fc9); // Alternative Xprinter ID
+              console.log('📡 Alternative vendor ID: Found device');
+            } catch (altError) {
+              console.log('⚠️  All USB detection methods failed');
+              throw new Error('No compatible USB thermal printer found');
+            }
           }
-          break;
-          
-        case 'serial':
-          // Serial Printer Setup - Uncomment when printer is connected
-          // const device = new escpos.Serial(process.env.SERIAL_PORT || 'COM1');
-          // printer = new escpos.Printer(device);
-          console.log('Serial printer configured (uncomment code when printer connected)');
-          break;
-          
-        case 'network':
-          // Network Printer Setup - Uncomment when printer is connected
-          // const device = new escpos.Network(process.env.PRINTER_IP || '192.168.1.100');
-          // printer = new escpos.Printer(device);
-          console.log('Network printer configured (uncomment code when printer connected)');
-          break;
-          
-        default:
-          console.log('Unknown printer type, running in simulation mode');
-      }
-      
-      if (printer) {
+        }
+        
+        printer = new escpos.Printer(device, { 
+          encoding: 'GB18030',
+          width: 48 // 48 characters for 58mm thermal printer
+        });
+        
         printerStatus = 'connected';
-        console.log('✅ Printer connected successfully');
-      } else {
+        console.log('✅ USB Xprinter XP-58IIH detected and configured successfully!');
+        console.log('🖨️  Ready for actual thermal printing');
+        
+      } catch (usbError) {
+        console.log('⚠️  USB printer not detected:', usbError.message);
+        console.log('💡 Troubleshooting checklist:');
+        console.log('   1. ✓ Printer connected via USB cable?');
+        console.log('   2. ✓ Printer powered ON (solid LED)?');
+        console.log('   3. ✓ Windows detected the device? (Device Manager shows "Unknown" - needs driver)');
+        console.log('   4. ✓ Try installing proper Xprinter drivers');
+        console.log('   5. ✓ Alternative: Use Bluetooth printing (which is working)');
+        
+        printer = null;
         printerStatus = 'simulation';
-        console.log('⚠️  Running in simulation mode - uncomment printer code when ready');
+        console.log('📝 Running in simulation mode - console output only');
       }
     } else {
+      // Other printer types (serial, network)
       printerStatus = 'simulation';
-      console.log('Development mode - running in simulation');
+      console.log(`⚠️  ${printerType} printer type not fully implemented yet`);
     }
     
     return true;
+    
   } catch (error) {
     console.error('❌ Failed to initialize printer:', error.message);
     printerStatus = 'error';
+    printer = null;
     return false;
   }
 };
@@ -171,7 +190,7 @@ const truncateText = (text, maxLength) => {
   return text.length > maxLength ? text.substring(0, maxLength - 3) + '...' : text;
 };
 
-// Print endpoint
+// Print endpoint with smart routing
 app.post('/print', async (req, res) => {
   try {
     const receiptData = req.body;
@@ -180,7 +199,8 @@ app.post('/print', async (req, res) => {
     const formattedReceipt = formatReceipt(receiptData);
     
     if (printer) {
-      // Actual Xprinter XP-58IIH printing
+      // Method 1: USB Thermal Printer (preferred)
+      console.log('🖨️  Printing via USB thermal printer...');
       printer.open(() => {
         printer
           .font('a')
@@ -254,18 +274,23 @@ app.post('/print', async (req, res) => {
           .close();
       });
     } else {
-      // Simulation mode - print to console
+      // Method 2: Simulation mode with helpful instructions
       console.log('\n' + '='.repeat(50));
-      console.log('PRINTING RECEIPT:');
+      console.log('PRINTING RECEIPT (SIMULATION MODE):');
       console.log('='.repeat(50));
       console.log(formattedReceipt);
       console.log('='.repeat(50));
+      console.log('💡 To enable real printing:');
+      console.log('   1. Fix USB driver (Device Manager shows "Unknown")');
+      console.log('   2. Install proper Xprinter drivers');
+      console.log('   3. Or use Bluetooth direct from frontend');
     }
     
     res.json({ 
       success: true, 
       message: 'Receipt printed successfully',
-      mode: printer ? 'actual' : 'simulation'
+      mode: printer ? 'usb-thermal' : 'simulation',
+      suggestion: printer ? null : 'USB driver issue detected - Bluetooth printing recommended'
     });
     
   } catch (error) {
@@ -273,7 +298,8 @@ app.post('/print', async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: 'Print failed', 
-      error: error.message 
+      error: error.message,
+      suggestion: 'Try Bluetooth printing from frontend as fallback'
     });
   }
 });

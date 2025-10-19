@@ -426,33 +426,15 @@ function Invoice({ token }) {
                 />
               </div>
               <div className="flex flex-col gap-3 sm:gap-4">
-                {/* Show printing status and options */}
+                {/* Simple printing status */}
                 <div className="bg-gray-100 border border-gray-300 rounded-lg p-3 text-xs sm:text-sm mb-3">
-                  <p className="font-semibold text-gray-800">🖨️ Printing Status:</p>
+                  <p className="font-semibold text-gray-800">🖨️ Printing Ready:</p>
                   <div className="text-gray-700 mt-1">
-                    <p>• Laptop Print Server: {printServerAvailable ? '✅ Available' : '❌ Not Available'}</p>
-                    <p>• Bluetooth Direct: {isPrinterConnected ? '✅ Connected' : '❌ Not Connected'}</p>
-                    <p>• Current Method: {preferredMethod}</p>
+                    <p>• Direct Bluetooth: {isPrinterConnected ? '✅ Connected' : '❌ Not Connected'}</p>
+                    {printServerAvailable && (
+                      <p>• Network Bridge: ✅ Available</p>
+                    )}
                   </div>
-                  {isIOS && (
-                    <p className="text-blue-700 mt-2">
-                      🍎 <strong>iPad Users:</strong> Laptop print server is recommended for best results with Xprinter XP-58IIH
-                    </p>
-                  )}
-                </div>
-
-                {/* Print method selector */}
-                <div className="mb-3">
-                  <label className="font-semibold text-sm underline mb-2 block">Print Method:</label>
-                  <select
-                    value={preferredMethod}
-                    onChange={(e) => setPrintingMethod(e.target.value)}
-                    className="w-full max-w-[150px] p-2 border rounded text-xs"
-                  >
-                    <option value="auto">🤖 Auto (Recommended)</option>
-                    <option value="server">🖥️ Laptop Server Only</option>
-                    <option value="bluetooth">📱 Bluetooth Only</option>
-                  </select>
                 </div>
                 
                 <div className="flex gap-2">
@@ -465,7 +447,7 @@ function Invoice({ token }) {
                     }`}
                     disabled={isPrinterConnected}
                   >
-                    {isPrinterConnected ? '✅ BT Connected' : '📱 Connect BT'}
+                  {isPrinterConnected ? '✅ Printer Ready' : '📱 Connect Printer'}
                   </button>
                   
                   <button
