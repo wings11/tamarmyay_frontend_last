@@ -1,17 +1,34 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import BluetoothThermalPrinter from '../utils/BluetoothThermalPrinter';
+import PrintServerClient from '../utils/PrintServerClient';
 
 const PrinterContext = createContext();
 
 export function PrinterProvider({ children }) {
   const [printer, setPrinter] = useState(null);
+  const [printServer, setPrintServer] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('disconnected'); // disconnected, connecting, connected, error
+  const [printServerAvailable, setPrintServerAvailable] = useState(false);
+  const [preferredMethod, setPreferredMethod] = useState('auto'); // 'bluetooth', 'server', 'auto'
 
-  // Initialize printer instance once with PWA enhancements
+  // Initialize printer instances with PWA enhancements
   useEffect(() => {
     const printerInstance = new BluetoothThermalPrinter();
+    const printServerInstance = new PrintServerClient();
+    
     setPrinter(printerInstance);
+    setPrintServer(printServerInstance);
+
+    // Check print server availability on startup
+    printServerInstance.checkAvailability().then(available => {
+      setPrintServerAvailable(available);
+      if (available) {
+        console.log('✅ Laptop print server detected - iPad can use laptop as print bridge');
+      } else {
+        console.log('ℹ️  No print server detected - will use direct Bluetooth only');
+      }
+    });
 
     // PWA-specific enhancements for better printer connectivity
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
@@ -79,19 +96,78 @@ export function PrinterProvider({ children }) {
     }
   };
 
-  // Print receipt
+  // Print receipt with smart method selection
   const printReceipt = async (receiptData) => {
-    if (!printer) {
-      throw new Error('Printer not initialized');
+    console.log('🖨️  Starting smart print process...');
+    
+    // Method 1: Try laptop print server first (most reliable for iPad + USB printer)
+    if (printServer && (preferredMethod === 'server' || preferredMethod === 'auto')) {
+      try {
+        console.log('🖥️  Attempting to print via laptop print server...');
+        const serverAvailable = await printServer.checkAvailability();
+        
+        if (serverAvailable) {
+          const result = await printServer.printReceipt(receiptData);
+          console.log('✅ Successfully printed via laptop print server!');
+          return result;
+        }
+      } catch (serverError) {
+        console.warn('⚠️  Laptop print server failed:', serverError.message);
+        
+        if (preferredMethod === 'server') {
+          throw new Error(`Print server failed: ${serverError.message}. Make sure your laptop is running the print server.`);
+        }
+        // Continue to Bluetooth if auto mode
+      }
     }
 
-    // Auto-connect if not connected
-    if (!isConnected || !printer.checkConnection()) {
-      console.log('🔄 Printer not connected, attempting to connect...');
-      await connectPrinter();
+    // Method 2: Try direct Bluetooth connection (fallback)
+    if (printer && (preferredMethod === 'bluetooth' || preferredMethod === 'auto')) {
+      try {
+        console.log('📱 Attempting direct Bluetooth printing...');
+        
+        // Auto-connect if not connected
+        if (!isConnected || !printer.checkConnection()) {
+          console.log('🔄 Printer not connected, attempting to connect...');
+          await connectPrinter();
+        }
+
+        const result = await printer.print(receiptData);
+        console.log('✅ Successfully printed via Bluetooth!');
+        return result;
+      } catch (bluetoothError) {
+        console.warn('⚠️  Bluetooth printing failed:', bluetoothError.message);
+        
+        if (preferredMethod === 'bluetooth') {
+          throw bluetoothError;
+        }
+        // If we're in auto mode and both failed, throw combined error
+        const serverMsg = printServerAvailable ? 'Failed' : 'Not available';
+        throw new Error(`All printing methods failed. Laptop server: ${serverMsg}. Bluetooth: ${bluetoothError.message}`);
+      }
     }
 
-    return await printer.print(receiptData);
+    throw new Error('No printing methods available');
+  };
+
+  // Set preferred printing method
+  const setPrintingMethod = (method) => {
+    setPreferredMethod(method);
+    console.log(`🔧 Printing method set to: ${method}`);
+  };
+
+  // Check print server status
+  const checkPrintServer = async () => {
+    if (!printServer) return false;
+    
+    try {
+      const available = await printServer.checkAvailability();
+      setPrintServerAvailable(available);
+      return available;
+    } catch (error) {
+      setPrintServerAvailable(false);
+      return false;
+    }
   };
 
   // Check connection status
@@ -110,12 +186,17 @@ export function PrinterProvider({ children }) {
 
   const value = {
     printer,
+    printServer,
     isConnected,
     connectionStatus,
+    printServerAvailable,
+    preferredMethod,
     connectPrinter,
     disconnectPrinter,
     printReceipt,
-    checkConnection
+    checkConnection,
+    checkPrintServer,
+    setPrintingMethod
   };
 
   return (

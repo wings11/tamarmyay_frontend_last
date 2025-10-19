@@ -1,54 +1,213 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Test POS Printer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Server Test - Tamarmyay Restaurant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; text-align: center; }
+        .status { padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .test-receipt {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-line;
+        }
+    </style>
 </head>
 <body>
-    <h1>Test POS Printer</h1>
-    <button onclick="testPrint()">Test Print Receipt</button>
-    <div id="result"></div>
+    <div class="container">
+        <h1>🖨️ Print Server Test</h1>
+        <h2>Tamarmyay Restaurant - Xprinter XP-58IIH</h2>
+        
+        <div id="status" class="status warning">
+            ⏳ Checking print server status...
+        </div>
+        
+        <div id="printerStatus"></div>
+        
+        <div id="controls" style="margin: 20px 0;">
+            <button onclick="checkStatus()">🔄 Check Status</button>
+            <button onclick="testPrint()" id="printBtn" disabled>🖨️ Test Print</button>
+        </div>
+        
+        <div class="test-receipt">
+Test Receipt Data:
+================================
+      TAMARMYAY RESTAURANT
+================================
+
+52/345-2 Ek Prachim Road, Lak Hok,
+Pathum Thani, 12000
+
+Order Type: Test
+Date & Time: [Current Time]
+Order ID: TEST-001
+
+--------------------------------
+Item                Qty    Price
+--------------------------------
+Test Item 1           1     10.00
+Test Item 2           2     15.50
+--------------------------------
+Total: 41.00 B
+--------------------------------
+
+Thank You & See You Again
+        </div>
+        
+        <div id="logs" style="margin-top: 20px;">
+            <h3>📋 Test Logs:</h3>
+            <div id="logOutput" style="background: #000; color: #0f0; padding: 10px; border-radius: 5px; font-family: monospace; height: 200px; overflow-y: auto;"></div>
+        </div>
+    </div>
 
     <script>
-        async function testPrint() {
-            const testReceipt = {
-                restaurantName: "TAMARMYAY RESTAURANT",
-                address1: "52/345-2 Ek Prachim Road, Lak Hok,",
-                address2: "Pathum Thani, 12000",
-                orderType: "Dine-in",
-                tableNumber: "5",
-                dateTime: new Date().toLocaleString(),
-                orderId: "TEST123",
-                items: [
-                    { name: "Pad Thai", quantity: 2, price: "120.00" },
-                    { name: "Green Curry", quantity: 1, price: "85.00" },
-                    { name: "Thai Tea", quantity: 2, price: "25.00" }
-                ],
-                total: "255.00",
-                paymentMethod: "Cash",
-                customerNote: "Extra spicy",
-                footerMessage: "Thank You & See You Again"
-            };
-
+        const API_BASE = 'http://localhost:3001';
+        
+        function log(message) {
+            const logOutput = document.getElementById('logOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            logOutput.innerHTML += `[${timestamp}] ${message}\n`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+        
+        async function checkStatus() {
+            const statusDiv = document.getElementById('status');
+            const printerStatusDiv = document.getElementById('printerStatus');
+            const printBtn = document.getElementById('printBtn');
+            
             try {
-                const response = await fetch('http://localhost:3001/print', {
+                log('🔍 Checking print server...');
+                statusDiv.innerHTML = '⏳ Checking print server...';
+                statusDiv.className = 'status warning';
+                
+                // Check if server is running
+                const healthResponse = await fetch(`${API_BASE}/health`);
+                if (!healthResponse.ok) throw new Error('Server not responding');
+                
+                log('✅ Print server is running');
+                
+                // Check printer status
+                const printerResponse = await fetch(`${API_BASE}/printer/status`);
+                const printerData = await printerResponse.json();
+                
+                statusDiv.innerHTML = '✅ Print server is running and accessible!';
+                statusDiv.className = 'status success';
+                
+                printerStatusDiv.innerHTML = `
+                    <div class="status ${printerData.connected ? 'success' : 'warning'}">
+                        <strong>🖨️ Printer Status:</strong><br>
+                        Connected: ${printerData.connected ? '✅ Yes' : '❌ No'}<br>
+                        Status: ${printerData.status}<br>
+                        Mode: ${printerData.mode}<br>
+                        Type: ${printerData.printerType}<br>
+                        Message: ${printerData.message}
+                    </div>
+                `;
+                
+                printBtn.disabled = false;
+                log(`🖨️ Printer status: ${printerData.status} (${printerData.mode})`);
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+                statusDiv.innerHTML = `❌ Print server not available: ${error.message}`;
+                statusDiv.className = 'status error';
+                printerStatusDiv.innerHTML = '';
+                printBtn.disabled = true;
+            }
+        }
+        
+        async function testPrint() {
+            const printBtn = document.getElementById('printBtn');
+            
+            try {
+                printBtn.disabled = true;
+                printBtn.innerHTML = '⏳ Printing...';
+                log('🖨️ Sending test print job...');
+                
+                const testReceipt = {
+                    restaurantName: "TAMARMYAY RESTAURANT",
+                    address1: "52/345-2 Ek Prachim Road, Lak Hok,",
+                    address2: "Pathum Thani, 12000",
+                    orderType: "Test",
+                    tableNumber: null,
+                    dateTime: new Date().toLocaleString(),
+                    orderId: "TEST-001",
+                    customerName: null,
+                    buildingName: null,
+                    items: [
+                        { name: "Test Item 1", quantity: 1, price: "10.00" },
+                        { name: "Test Item 2", quantity: 2, price: "15.50" }
+                    ],
+                    total: "41.00",
+                    paymentMethod: "Test",
+                    customerNote: "This is a test receipt",
+                    footerMessage: "Thank You & See You Again"
+                };
+                
+                const response = await fetch(`${API_BASE}/print`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(testReceipt)
                 });
-
-                const result = await response.json();
-                document.getElementById('result').innerHTML = 
-                    `<p style="color: green;">✅ ${result.message} (Mode: ${result.mode})</p>`;
                 
-                console.log('Print result:', result);
+                const result = await response.json();
+                
+                if (result.success) {
+                    log(`✅ Print successful! Mode: ${result.mode}`);
+                    alert(`✅ Test print successful!\n\nMode: ${result.mode}\nMessage: ${result.message}`);
+                } else {
+                    throw new Error(result.message || 'Print failed');
+                }
+                
             } catch (error) {
-                document.getElementById('result').innerHTML = 
-                    `<p style="color: red;">❌ Print failed: ${error.message}</p>`;
-                console.error('Print error:', error);
+                log(`❌ Print failed: ${error.message}`);
+                alert(`❌ Print test failed: ${error.message}`);
+            } finally {
+                printBtn.disabled = false;
+                printBtn.innerHTML = '🖨️ Test Print';
             }
         }
+        
+        // Auto-check status on page load
+        window.onload = () => {
+            log('🚀 Print server test page loaded');
+            checkStatus();
+        };
     </script>
 </body>
 </html>

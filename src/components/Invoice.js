@@ -12,12 +12,16 @@ function Invoice({ token }) {
   const [error, setError] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false); // State for toggling sidebar on mobile
   
-  // Use global printer context instead of local state
+  // Use global printer context with new features
   const { 
     isConnected: isPrinterConnected, 
+    printServerAvailable,
+    preferredMethod,
     connectPrinter, 
     printReceipt, 
     checkConnection,
+    checkPrintServer,
+    setPrintingMethod,
     connectionStatus 
   } = usePrinter();
   
@@ -422,30 +426,59 @@ function Invoice({ token }) {
                 />
               </div>
               <div className="flex flex-col gap-3 sm:gap-4">
-                {/* Show iPad-specific instructions */}
-                {isIOS && (
-                  <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 text-xs sm:text-sm mb-2">
-                    <p className="font-semibold text-blue-800">🍎 iPad Printing:</p>
-                    <p className="text-blue-700">
-                      • Try Bluetooth first, or use Safari print<br/>
-                      • For best results: Settings → Bluetooth → Connect your Xprinter
-                    </p>
+                {/* Show printing status and options */}
+                <div className="bg-gray-100 border border-gray-300 rounded-lg p-3 text-xs sm:text-sm mb-3">
+                  <p className="font-semibold text-gray-800">🖨️ Printing Status:</p>
+                  <div className="text-gray-700 mt-1">
+                    <p>• Laptop Print Server: {printServerAvailable ? '✅ Available' : '❌ Not Available'}</p>
+                    <p>• Bluetooth Direct: {isPrinterConnected ? '✅ Connected' : '❌ Not Connected'}</p>
+                    <p>• Current Method: {preferredMethod}</p>
                   </div>
-                )}
+                  {isIOS && (
+                    <p className="text-blue-700 mt-2">
+                      🍎 <strong>iPad Users:</strong> Laptop print server is recommended for best results with Xprinter XP-58IIH
+                    </p>
+                  )}
+                </div>
+
+                {/* Print method selector */}
+                <div className="mb-3">
+                  <label className="font-semibold text-sm underline mb-2 block">Print Method:</label>
+                  <select
+                    value={preferredMethod}
+                    onChange={(e) => setPrintingMethod(e.target.value)}
+                    className="w-full max-w-[150px] p-2 border rounded text-xs"
+                  >
+                    <option value="auto">🤖 Auto (Recommended)</option>
+                    <option value="server">🖥️ Laptop Server Only</option>
+                    <option value="bluetooth">📱 Bluetooth Only</option>
+                  </select>
+                </div>
                 
-                <button
-                  onClick={connectBluetoothPrinter}
-                  className={`w-full max-w-[150px] h-10 sm:h-12 rounded-[20px] font-semibold text-sm sm:text-base ${
-                    isPrinterConnected 
-                      ? 'bg-green-500 text-white' 
-                      : isIOS 
-                        ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                <div className="flex gap-2">
+                  <button
+                    onClick={connectBluetoothPrinter}
+                    className={`flex-1 max-w-[150px] h-10 sm:h-12 rounded-[20px] font-semibold text-xs sm:text-sm ${
+                      isPrinterConnected 
+                        ? 'bg-green-500 text-white' 
                         : 'bg-blue-500 text-white hover:bg-blue-600'
-                  }`}
-                  disabled={isPrinterConnected}
-                >
-                  {isPrinterConnected ? '✅ Connected' : isIOS ? '🍎 Connect XPrinter' : '📱 Connect Printer'}
-                </button>
+                    }`}
+                    disabled={isPrinterConnected}
+                  >
+                    {isPrinterConnected ? '✅ BT Connected' : '📱 Connect BT'}
+                  </button>
+                  
+                  <button
+                    onClick={() => checkPrintServer()}
+                    className={`flex-1 max-w-[150px] h-10 sm:h-12 rounded-[20px] font-semibold text-xs sm:text-sm ${
+                      printServerAvailable 
+                        ? 'bg-green-500 text-white' 
+                        : 'bg-orange-500 text-white hover:bg-orange-600'
+                    }`}
+                  >
+                    {printServerAvailable ? '✅ Server Ready' : '�️ Check Server'}
+                  </button>
+                </div>
                 
                 <button
                   onClick={handleCheckout}

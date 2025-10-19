@@ -3,11 +3,11 @@ const cors = require('cors');
 // Load environment variables
 require('dotenv').config();
 
-// Uncomment when you connect actual printer
-// const escpos = require('escpos');
-// escpos.USB = require('escpos-usb');
-// escpos.Serial = require('escpos-serialport');
-// escpos.Network = require('escpos-network');
+// Printer dependencies - ready for production
+const escpos = require('escpos');
+escpos.USB = require('escpos-usb');
+escpos.Serial = require('escpos-serialport');
+escpos.Network = require('escpos-network');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -31,10 +31,15 @@ const initializePrinter = () => {
       
       switch (printerType.toLowerCase()) {
         case 'usb':
-          // USB Printer Setup - Uncomment when printer is connected
-          // const device = new escpos.USB();
-          // printer = new escpos.Printer(device);
-          console.log('USB printer configured (uncomment code when printer connected)');
+          // USB Printer Setup for Xprinter XP-58IIH
+          try {
+            const device = new escpos.USB();
+            printer = new escpos.Printer(device, { encoding: 'GB18030' });
+            console.log('✅ USB Xprinter XP-58IIH configured successfully');
+          } catch (error) {
+            console.log('⚠️  USB printer not found, running in simulation mode');
+            printer = null;
+          }
           break;
           
         case 'serial':
@@ -175,27 +180,79 @@ app.post('/print', async (req, res) => {
     const formattedReceipt = formatReceipt(receiptData);
     
     if (printer) {
-      // Actual printer code (when printer is connected)
-      // printer.open(() => {
-      //   printer
-      //     .font('a')
-      //     .align('ct')
-      //     .style('bu')
-      //     .size(1, 1)
-      //     .text(receiptData.restaurantName || 'TAMARMYAY RESTAURANT')
-      //     .text('\n\n')
-      //     .align('ct')
-      //     .style('normal')
-      //     .size(0, 0)
-      //     .text(receiptData.address1 || '52/345-2 Ek Prachim Road, Lak Hok,')
-      //     .text(receiptData.address2 || 'Pathum Thani, 12000')
-      //     .text('\n')
-      //     .align('lt')
-      //     .text(`Order Type: ${receiptData.orderType}`)
-      //     // ... continue with full receipt formatting
-      //     .cut()
-      //     .close();
-      // });
+      // Actual Xprinter XP-58IIH printing
+      printer.open(() => {
+        printer
+          .font('a')
+          .align('ct')
+          .style('bu')
+          .size(1, 1)
+          .text(receiptData.restaurantName || 'TAMARMYAY RESTAURANT')
+          .text('\n')
+          .text('================================')
+          .text('\n\n')
+          .align('ct')
+          .style('normal')
+          .size(0, 0)
+          .text(receiptData.address1 || '52/345-2 Ek Prachim Road, Lak Hok,')
+          .text(receiptData.address2 || 'Pathum Thani, 12000')
+          .text('\n\n')
+          .align('lt')
+          .text(`Order Type: ${receiptData.orderType}`)
+          
+        if (receiptData.tableNumber) {
+          printer.text(`Table No: ${receiptData.tableNumber}`);
+        }
+        
+        printer
+          .text(`Date & Time: ${receiptData.dateTime}`)
+          .text(`Order ID: ${receiptData.orderId}`)
+          
+        if (receiptData.customerName) {
+          printer.text(`Customer: ${receiptData.customerName}`);
+        }
+        
+        if (receiptData.buildingName) {
+          printer.text(`Building: ${receiptData.buildingName}`);
+        }
+        
+        printer
+          .text('\n')
+          .text('--------------------------------')
+          .text('Item                Qty    Price')
+          .text('--------------------------------')
+          
+        receiptData.items.forEach(item => {
+          const name = truncateText(item.name, 15);
+          const qty = item.quantity.toString().padStart(3);
+          const price = `${parseFloat(item.price).toFixed(2)} B`.padStart(8);
+          printer.text(`${name.padEnd(15)} ${qty} ${price}`);
+        });
+        
+        printer
+          .text('--------------------------------')
+          .align('rt')
+          .style('bu')
+          .text(`Total: ${parseFloat(receiptData.total).toFixed(2)} B`)
+          .style('normal')
+          .text('--------------------------------')
+          
+        if (receiptData.paymentMethod) {
+          printer.text(`Payment: ${receiptData.paymentMethod}`);
+        }
+        
+        if (receiptData.customerNote && receiptData.customerNote.trim()) {
+          printer.text(`Note: ${receiptData.customerNote}`);
+        }
+        
+        printer
+          .text('\n')
+          .align('ct')
+          .text(receiptData.footerMessage || 'Thank You & See You Again')
+          .text('\n\n\n')
+          .cut()
+          .close();
+      });
     } else {
       // Simulation mode - print to console
       console.log('\n' + '='.repeat(50));
