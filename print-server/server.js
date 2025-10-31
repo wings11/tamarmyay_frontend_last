@@ -18,9 +18,25 @@ const PRINTER_NAME = process.env.WINDOWS_PRINTER_NAME || 'XP-58 (copy 1)';
 app.use(cors());
 app.use(express.json());
 
-// Serve the test HTML page
+// Health check endpoint
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'test.html'));
+  res.json({
+    status: 'online',
+    printer: PRINTER_NAME,
+    message: 'Print server is ready',
+    endpoints: {
+      health: 'GET /',
+      print: 'POST /print'
+    }
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'online',
+    printer: PRINTER_NAME,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Format receipt for POS system
