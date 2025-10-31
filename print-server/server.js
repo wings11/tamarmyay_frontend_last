@@ -1,13 +1,15 @@
 const express = require('express');
 const cors = require('cors');
+const { exec } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 // Load environment variables
 require('dotenv').config();
 
-// Uncomment when you connect actual printer
-// const escpos = require('escpos');
-// escpos.USB = require('escpos-usb');
-// escpos.Serial = require('escpos-serialport');
-// escpos.Network = require('escpos-network');
+// USB Printer Libraries - Now enabled for production use
+const escpos = require('escpos');
+escpos.USB = require('escpos-usb');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -20,57 +22,75 @@ app.use(express.json());
 // Store for printer device (will be set when printer is connected)
 let printer = null;
 let printerStatus = 'disconnected';
+let windowsPrinterName = process.env.WINDOWS_PRINTER_NAME || 'XP-58 (copy 1)';
+
+// Print to Windows printer using raw text
+const printToWindowsPrinter = (receiptText) => {
+  return new Promise((resolve, reject) => {
+    const tempFile = path.join(os.tmpdir(), `receipt_${Date.now()}.txt`);
+    
+    // Write receipt to temp file
+    fs.writeFileSync(tempFile, receiptText, 'utf8');
+    
+    // Print using Windows command
+    const printCommand = `print /D:"${windowsPrinterName}" "${tempFile}"`;
+    
+    exec(printCommand, (error, stdout, stderr) => {
+      // Clean up temp file
+      try { fs.unlinkSync(tempFile); } catch (e) { }
+      
+      if (error) {
+        console.error('Windows print error:', error);
+        reject(error);
+      } else {
+        console.log('✅ Printed to Windows printer:', windowsPrinterName);
+        resolve(true);
+      }
+    });
+  });
+};
 
 // Initialize printer connection
 const initializePrinter = () => {
   try {
-    const printerType = process.env.PRINTER_TYPE || 'USB';
+    console.log('🖨️  Checking printer connections...');
+    console.log(`📍 Windows printer name: "${windowsPrinterName}"`);
     
-    if (NODE_ENV === 'production') {
-      console.log(`Initializing ${printerType} printer for production...`);
-      
-      switch (printerType.toLowerCase()) {
-        case 'usb':
-          // USB Printer Setup - Uncomment when printer is connected
-          // const device = new escpos.USB();
-          // printer = new escpos.Printer(device);
-          console.log('USB printer configured (uncomment code when printer connected)');
-          break;
-          
-        case 'serial':
-          // Serial Printer Setup - Uncomment when printer is connected
-          // const device = new escpos.Serial(process.env.SERIAL_PORT || 'COM1');
-          // printer = new escpos.Printer(device);
-          console.log('Serial printer configured (uncomment code when printer connected)');
-          break;
-          
-        case 'network':
-          // Network Printer Setup - Uncomment when printer is connected
-          // const device = new escpos.Network(process.env.PRINTER_IP || '192.168.1.100');
-          // printer = new escpos.Printer(device);
-          console.log('Network printer configured (uncomment code when printer connected)');
-          break;
-          
-        default:
-          console.log('Unknown printer type, running in simulation mode');
-      }
-      
-      if (printer) {
-        printerStatus = 'connected';
-        console.log('✅ Printer connected successfully');
-      } else {
-        printerStatus = 'simulation';
-        console.log('⚠️  Running in simulation mode - uncomment printer code when ready');
-      }
-    } else {
-      printerStatus = 'simulation';
-      console.log('Development mode - running in simulation');
+    // On Windows, we'll use the Windows printer API as primary method
+    if (process.platform === 'win32') {
+      console.log('✅ Windows detected - will use Windows print commands');
+      console.log(`🖨️  Target printer: "${windowsPrinterName}"`);
+      printerStatus = 'connected';
+      printer = 'windows'; // Marker for Windows printing mode
+      console.log('📍 Print server ready to receive requests from iPad');
+      return true;
     }
+    
+    // For non-Windows, try USB direct connection
+    console.log('🖨️  Attempting direct USB connection...');
+    const device = new escpos.USB();
+    
+    device.open((error) => {
+      if (error) {
+        console.error('❌ USB printer not found:', error.message);
+        console.log('⚠️  Running in SIMULATION mode');
+        printerStatus = 'simulation';
+        printer = null;
+        return;
+      }
+      
+      printer = new escpos.Printer(device);
+      printerStatus = 'connected';
+      console.log('✅ USB printer connected successfully!');
+      device.close();
+    });
     
     return true;
   } catch (error) {
     console.error('❌ Failed to initialize printer:', error.message);
-    printerStatus = 'error';
+    console.log('⚠️  Running in SIMULATION mode');
+    printerStatus = 'simulation';
+    printer = null;
     return false;
   }
 };
@@ -166,53 +186,137 @@ const truncateText = (text, maxLength) => {
   return text.length > maxLength ? text.substring(0, maxLength - 3) + '...' : text;
 };
 
-// Print endpoint
+// Print endpoint - Receives requests from iPad
 app.post('/print', async (req, res) => {
   try {
     const receiptData = req.body;
-    console.log('Received print request:', receiptData);
+    console.log('📱 Received print request from iPad:', {
+      orderId: receiptData.orderId,
+      total: receiptData.total,
+      items: receiptData.items?.length || 0
+    });
     
     const formattedReceipt = formatReceipt(receiptData);
     
-    if (printer) {
-      // Actual printer code (when printer is connected)
-      // printer.open(() => {
-      //   printer
-      //     .font('a')
-      //     .align('ct')
-      //     .style('bu')
-      //     .size(1, 1)
-      //     .text(receiptData.restaurantName || 'TAMARMYAY RESTAURANT')
-      //     .text('\n\n')
-      //     .align('ct')
-      //     .style('normal')
-      //     .size(0, 0)
-      //     .text(receiptData.address1 || '52/345-2 Ek Prachim Road, Lak Hok,')
-      //     .text(receiptData.address2 || 'Pathum Thani, 12000')
-      //     .text('\n')
-      //     .align('lt')
-      //     .text(`Order Type: ${receiptData.orderType}`)
-      //     // ... continue with full receipt formatting
-      //     .cut()
-      //     .close();
-      // });
-    } else {
-      // Simulation mode - print to console
-      console.log('\n' + '='.repeat(50));
-      console.log('PRINTING RECEIPT:');
-      console.log('='.repeat(50));
-      console.log(formattedReceipt);
-      console.log('='.repeat(50));
+    // Windows printer method (primary for Windows systems)
+    if (printerStatus === 'connected' && printer === 'windows' && process.platform === 'win32') {
+      try {
+        await printToWindowsPrinter(formattedReceipt);
+        
+        res.json({ 
+          success: true, 
+          message: `Receipt sent to Windows printer: ${windowsPrinterName}`,
+          mode: 'windows-printer',
+          orderId: receiptData.orderId,
+          printer: windowsPrinterName
+        });
+        return;
+      } catch (printError) {
+        console.error('⚠️  Windows print failed:', printError.message);
+        // Fall through to simulation
+      }
     }
+    
+    // USB Direct method (for non-Windows or fallback)
+    if (printerStatus === 'connected' && printer !== 'windows') {
+      try {
+        const device = new escpos.USB();
+        
+        device.open((error) => {
+          if (error) {
+            console.error('⚠️  USB printer busy, printing to console instead');
+            console.log('\n' + '='.repeat(50));
+            console.log('SIMULATION PRINT:');
+            console.log('='.repeat(50));
+            console.log(formattedReceipt);
+            console.log('='.repeat(50));
+            return;
+          }
+          
+          const thermalPrinter = new escpos.Printer(device);
+          
+          // Print with ESC/POS commands
+          thermalPrinter
+            .font('a')
+            .align('ct')
+            .style('bu')
+            .size(1, 1)
+            .text(receiptData.restaurantName || 'TAMARMYAY RESTAURANT')
+            .size(0, 0)
+            .style('normal')
+            .text('================================')
+            .text(receiptData.address1 || '52/345-2 Ek Prachim Road, Lak Hok,')
+            .text(receiptData.address2 || 'Pathum Thani, 12000')
+            .text('')
+            .align('lt')
+            .text(`Order Type: ${receiptData.orderType}`)
+            .text(receiptData.tableNumber ? `Table No: ${receiptData.tableNumber}` : '')
+            .text(`Date & Time: ${receiptData.dateTime}`)
+            .text(`Order ID: ${receiptData.orderId}`)
+            .text('')
+            .text('--------------------------------')
+            .text('Item                Qty    Price')
+            .text('--------------------------------');
+          
+          // Print items
+          receiptData.items?.forEach(item => {
+            const name = truncateText(item.name, 15).padEnd(15);
+            const qty = item.quantity.toString().padStart(3);
+            const price = `${parseFloat(item.price).toFixed(2)} B`.padStart(10);
+            thermalPrinter.text(`${name} ${qty} ${price}`);
+          });
+          
+          thermalPrinter
+            .text('--------------------------------')
+            .align('rt')
+            .style('bu')
+            .text(`Total: ${parseFloat(receiptData.total).toFixed(2)} B`)
+            .style('normal')
+            .align('lt')
+            .text('--------------------------------')
+            .text(receiptData.paymentMethod ? `Payment: ${receiptData.paymentMethod}` : '')
+            .text(receiptData.customerNote ? `Note: ${receiptData.customerNote}` : '')
+            .text('')
+            .align('ct')
+            .text(receiptData.footerMessage || 'Thank You & See You Again')
+            .text('')
+            .text('')
+            .text('')
+            .cut()
+            .close();
+          
+          console.log('✅ Receipt printed successfully via USB!');
+        });
+        
+        res.json({ 
+          success: true, 
+          message: 'Receipt sent to USB printer',
+          mode: 'usb-direct',
+          orderId: receiptData.orderId
+        });
+        return;
+        
+      } catch (printError) {
+        console.error('⚠️  USB print failed:', printError.message);
+        // Fall through to simulation
+      }
+    }
+    
+    // Simulation mode - print to console
+    console.log('\n' + '='.repeat(50));
+    console.log('SIMULATION PRINT:');
+    console.log('='.repeat(50));
+    console.log(formattedReceipt);
+    console.log('='.repeat(50));
     
     res.json({ 
       success: true, 
-      message: 'Receipt printed successfully',
-      mode: printer ? 'actual' : 'simulation'
+      message: 'Receipt printed (simulation mode - printer not detected)',
+      mode: 'simulation'
     });
     
   } catch (error) {
-    console.error('Print error:', error);
+    console.error('❌ Print error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Print failed', 

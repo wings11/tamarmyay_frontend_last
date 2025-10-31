@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Server Test - iPad to Laptop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #6366f1;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #4f46e5;
+        }
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #059669;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #3b82f6;
+        }
+        .instructions {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .instructions code {
+            background: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍎💻 Print Server Test</h1>
+        <p style="text-align: center; color: #666;">Test iPad to Laptop print connection</p>
+
+        <div class="instructions">
+            <strong>📋 Before Testing:</strong><br>
+            1. On laptop, run: <code>start-print-server.bat</code><br>
+            2. Find laptop IP: <code>ipconfig</code><br>
+            3. Enter IP below and test connection
+        </div>
+
+        <div class="section">
+            <h3>Step 1: Connect to Print Server</h3>
+            <input 
+                type="text" 
+                id="serverUrl" 
+                placeholder="http://192.168.1.100:3001"
+                value="http://localhost:3001"
+            >
+            <div id="connectionStatus"></div>
+            <button class="btn-primary" onclick="testConnection()">
+                🔍 Test Connection
+            </button>
+        </div>
+
+        <div class="section">
+            <h3>Step 2: Print Test Receipt</h3>
+            <div id="printStatus"></div>
+            <button class="btn-success" onclick="testPrint()" id="printBtn" disabled>
+                🖨️ Print Test Receipt
+            </button>
+        </div>
+
+        <div class="section">
+            <h3>📊 Server Status</h3>
+            <div id="serverStatus"></div>
+            <button class="btn-primary" onclick="checkServerStatus()">
+                🔄 Check Status
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let serverUrl = 'http://localhost:3001';
+        let isConnected = false;
+
+        async function testConnection() {
+            const input = document.getElementById('serverUrl');
+            serverUrl = input.value.trim().replace(/\/$/, '');
+            
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.innerHTML = '<div class="status info">🔄 Testing connection...</div>';
+
+            try {
+                const response = await fetch(`${serverUrl}/health`);
+                
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}`);
+                }
+
+                const data = await response.json();
+                statusDiv.innerHTML = `<div class="status success">✅ Connected to print server!<br>Time: ${data.timestamp}</div>`;
+                isConnected = true;
+                document.getElementById('printBtn').disabled = false;
+                
+                // Auto-check printer status
+                await checkServerStatus();
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Connection failed: ${error.message}<br><br>Make sure:<br>• Laptop print server is running<br>• IP address is correct<br>• Same WiFi network</div>`;
+                isConnected = false;
+                document.getElementById('printBtn').disabled = true;
+            }
+        }
+
+        async function checkServerStatus() {
+            const statusDiv = document.getElementById('serverStatus');
+            statusDiv.innerHTML = '<div class="status info">🔄 Checking printer status...</div>';
+
+            try {
+                const response = await fetch(`${serverUrl}/printer/status`);
+                
+                if (!response.ok) {
+                    throw new Error('Server error');
+                }
+
+                const data = await response.json();
+                
+                let statusHtml = `
+                    <div class="status ${data.connected ? 'success' : 'info'}">
+                        ${data.connected ? '✅' : '⚠️'} Printer Status: <strong>${data.status}</strong><br>
+                        Mode: ${data.mode}<br>
+                        Type: ${data.printerType}<br>
+                        Message: ${data.message}
+                    </div>
+                `;
+                
+                statusDiv.innerHTML = statusHtml;
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Failed to check status: ${error.message}</div>`;
+            }
+        }
+
+        async function testPrint() {
+            if (!isConnected) {
+                alert('⚠️ Please test connection first!');
+                return;
+            }
+
+            const statusDiv = document.getElementById('printStatus');
+            const btn = document.getElementById('printBtn');
+            
+            btn.disabled = true;
+            statusDiv.innerHTML = '<div class="status info">🔄 Sending test print...</div>';
+
+            // Sample receipt data
+            const receiptData = {
+                restaurantName: "TAMARMYAY RESTAURANT",
+                address1: "52/345-2 Ek Prachim Rd, Lak Hok,",
+                address2: "Pathum Thani, 12000",
+                orderType: "Dine-in",
+                tableNumber: "5",
+                dateTime: new Date().toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                }),
+                orderId: "TEST-" + Date.now(),
+                items: [
+                    { name: "Pad Thai", quantity: 2, price: "120.00" },
+                    { name: "Green Curry", quantity: 1, price: "85.00" },
+                    { name: "Thai Tea", quantity: 2, price: "50.00" }
+                ],
+                total: "255.00",
+                paymentMethod: "Cash",
+                customerNote: "Test print from iPad",
+                footerMessage: "Thank You & See You Again"
+            };
+
+            try {
+                const response = await fetch(`${serverUrl}/print`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(receiptData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `Server error: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                statusDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ Test receipt sent successfully!<br>
+                        Mode: ${result.mode}<br>
+                        Order ID: ${receiptData.orderId}<br>
+                        <br>
+                        ${result.mode === 'simulation' 
+                            ? '⚠️ Running in simulation mode. Check laptop terminal for receipt preview.' 
+                            : '🖨️ Receipt should be printing now!'}
+                    </div>
+                `;
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Print failed: ${error.message}</div>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // Auto-test connection on page load if on localhost
+        window.addEventListener('load', () => {
+            const urlInput = document.getElementById('serverUrl');
+            if (urlInput.value.includes('localhost') || urlInput.value.includes('127.0.0.1')) {
+                testConnection();
+            }
+        });
+    </script>
+</body>
+</html>

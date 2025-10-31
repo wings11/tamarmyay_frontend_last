@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { usePrinter } from "../contexts/PrinterContext";
 import PWAInstallPrompt from "./PWAInstallPrompt";
+import PrintServerAdapter from "../utils/PrintServerAdapter";
 
 function Invoice({ token }) {
   const [order, setOrder] = useState(null);
@@ -11,6 +12,12 @@ function Invoice({ token }) {
   const [customerNote, setCustomerNote] = useState("");
   const [error, setError] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false); // State for toggling sidebar on mobile
+  
+  // Print Server for iPad → Laptop → USB Printer
+  const [printServer] = useState(() => new PrintServerAdapter());
+  const [printServerUrl, setPrintServerUrl] = useState(localStorage.getItem('printServerUrl') || '');
+  const [printServerConnected, setPrintServerConnected] = useState(false);
+  const [showServerSetup, setShowServerSetup] = useState(false);
   
   // Use global printer context instead of local state
   const { 
@@ -147,6 +154,83 @@ function Invoice({ token }) {
     } catch (error) {
       console.error("Bluetooth connection failed:", error);
       setError("Failed to connect to Bluetooth printer. Make sure printer is on and in pairing mode.");
+    }
+  };
+
+  // Test connection to laptop print server
+  const testPrintServerConnection = async () => {
+    if (!printServerUrl) {
+      alert('⚠️  Please enter laptop IP address first!\n\nExample: http://192.168.1.100:3001');
+      return;
+    }
+
+    printServer.setServerUrl(printServerUrl);
+    const result = await printServer.checkConnection();
+
+    if (result.success) {
+      setPrintServerConnected(true);
+      localStorage.setItem('printServerUrl', printServerUrl);
+      alert(`✅ Connected to laptop print server!\n\nStatus: ${result.message}\nMode: ${result.mode}`);
+      setShowServerSetup(false);
+    } else {
+      setPrintServerConnected(false);
+      alert(`❌ Cannot connect to print server\n\n${result.message}\n\nMake sure:\n1. Laptop print server is running\n2. iPad and laptop are on same WiFi\n3. IP address is correct`);
+    }
+  };
+
+  // Print via laptop print server
+  const handlePrintViaServer = async () => {
+    if (!order) {
+      setError("No order to print");
+      return;
+    }
+
+    if (!printServerConnected) {
+      alert('⚠️  Not connected to print server.\n\nPlease click "Setup Laptop Printer" first.');
+      return;
+    }
+
+    // Calculate total
+    const total = order.FoodItems?.reduce((sum, item) => {
+      const price = parseFloat(item.OrderItem?.price) || parseFloat(foodItems[item.id]?.price) || 0;
+      const quantity = parseInt(item.OrderItem?.quantity) || 1;
+      return sum + price * quantity;
+    }, 0) || 0;
+
+    // Prepare receipt data
+    const receiptData = {
+      restaurantName: "TAMARMYAY RESTAURANT",
+      address1: "52/345-2 Ek Prachim Rd, Lak Hok,",
+      address2: "Pathum Thani, 12000",
+      orderType: orderType.charAt(0).toUpperCase() + orderType.slice(1),
+      tableNumber: orderType === "dine-in" ? tableNumber : null,
+      dateTime: currentDateTime,
+      orderId: order.id,
+      customerName: orderType === "delivery" ? order.customerName : null,
+      buildingName: orderType === "delivery" ? order.buildingName : null,
+      items: order.FoodItems?.map(item => ({
+        name: item.name,
+        quantity: item.OrderItem?.quantity || 1,
+        price: (parseFloat(item.OrderItem?.price) || parseFloat(foodItems[item.id]?.price) || 0).toFixed(2)
+      })) || [],
+      total: total.toFixed(2),
+      paymentMethod: paymentMethod || null,
+      customerNote: customerNote || null,
+      footerMessage: "Thank You & See You Again"
+    };
+
+    try {
+      const result = await printServer.print(receiptData);
+      
+      if (result.success) {
+        alert(`✅ Receipt sent to laptop printer!\n\nOrder ID: ${result.orderId}\nMode: ${result.mode}`);
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error('Print server error:', error);
+      alert(`❌ Print failed: ${error.message}\n\nMake sure laptop print server is still running.`);
+      setPrintServerConnected(false);
     }
   };
 
@@ -425,27 +509,86 @@ function Invoice({ token }) {
                 {/* Show iPad-specific instructions */}
                 {isIOS && (
                   <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 text-xs sm:text-sm mb-2">
-                    <p className="font-semibold text-blue-800">🍎 iPad Printing:</p>
+                    <p className="font-semibold text-blue-800">🍎 iPad Printing Options:</p>
                     <p className="text-blue-700">
-                      • Try Bluetooth first, or use Safari print<br/>
-                      • For best results: Settings → Bluetooth → Connect your Xprinter
+                      • <strong>Laptop Server:</strong> Best option! Connect via WiFi<br/>
+                      • <strong>Bluetooth:</strong> Direct connection (may not work)<br/>
+                      • <strong>Safari Print:</strong> Backup option
                     </p>
                   </div>
                 )}
                 
-                <button
-                  onClick={connectBluetoothPrinter}
-                  className={`w-full max-w-[150px] h-10 sm:h-12 rounded-[20px] font-semibold text-sm sm:text-base ${
-                    isPrinterConnected 
-                      ? 'bg-green-500 text-white' 
-                      : isIOS 
-                        ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                {/* Laptop Print Server Setup/Connect Button */}
+                {isIOS && !showServerSetup && (
+                  <button
+                    onClick={() => setShowServerSetup(true)}
+                    className={`w-full max-w-[200px] h-10 sm:h-12 rounded-[20px] font-semibold text-sm sm:text-base ${
+                      printServerConnected 
+                        ? 'bg-green-600 text-white' 
+                        : 'bg-purple-600 text-white hover:bg-purple-700'
+                    }`}
+                  >
+                    {printServerConnected ? '✅ Laptop Connected' : '💻 Setup Laptop Printer'}
+                  </button>
+                )}
+
+                {/* Print Server Setup Dialog */}
+                {isIOS && showServerSetup && (
+                  <div className="bg-purple-50 border-2 border-purple-300 rounded-lg p-4 mb-3">
+                    <h3 className="font-bold text-purple-900 mb-2">💻 Laptop Print Server Setup</h3>
+                    <div className="text-xs text-purple-800 mb-3">
+                      <p><strong>Step 1:</strong> On laptop, run: <code className="bg-purple-200 px-1">cd print-server && npm start</code></p>
+                      <p><strong>Step 2:</strong> Find laptop IP: <code className="bg-purple-200 px-1">ipconfig</code></p>
+                      <p><strong>Step 3:</strong> Enter laptop IP below:</p>
+                    </div>
+                    <input
+                      type="text"
+                      value={printServerUrl}
+                      onChange={(e) => setPrintServerUrl(e.target.value)}
+                      placeholder="http://192.168.1.100:3001"
+                      className="w-full p-2 border border-purple-300 rounded text-sm mb-2"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={testPrintServerConnection}
+                        className="flex-1 bg-purple-600 text-white rounded py-2 text-sm font-semibold hover:bg-purple-700"
+                      >
+                        Test Connection
+                      </button>
+                      <button
+                        onClick={() => setShowServerSetup(false)}
+                        className="px-4 bg-gray-300 text-black rounded py-2 text-sm font-semibold hover:bg-gray-400"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Print via Laptop Server Button (Main Print Option for iPad) */}
+                {isIOS && printServerConnected && (
+                  <button
+                    onClick={handlePrintViaServer}
+                    className="w-full max-w-[200px] h-12 sm:h-14 bg-green-600 text-white rounded-[20px] font-bold text-base sm:text-lg hover:bg-green-700 shadow-lg"
+                  >
+                    🖨️ Print via Laptop
+                  </button>
+                )}
+                
+                {/* Bluetooth option (kept for non-iPad or as backup) */}
+                {!isIOS && (
+                  <button
+                    onClick={connectBluetoothPrinter}
+                    className={`w-full max-w-[150px] h-10 sm:h-12 rounded-[20px] font-semibold text-sm sm:text-base ${
+                      isPrinterConnected 
+                        ? 'bg-green-500 text-white' 
                         : 'bg-blue-500 text-white hover:bg-blue-600'
-                  }`}
-                  disabled={isPrinterConnected}
-                >
-                  {isPrinterConnected ? '✅ Connected' : isIOS ? '🍎 Connect XPrinter' : '📱 Connect Printer'}
-                </button>
+                    }`}
+                    disabled={isPrinterConnected}
+                  >
+                    {isPrinterConnected ? '✅ Connected' : '📱 Connect Printer'}
+                  </button>
+                )}
                 
                 <button
                   onClick={handleCheckout}
@@ -454,14 +597,17 @@ function Invoice({ token }) {
                   Complete Order
                 </button>
                 
-                <button
-                  onClick={handlePrint}
-                  className="w-full max-w-[150px] h-10 sm:h-12 bg-[#DCC99B]/70 text-black rounded-[20px] font-semibold hover:bg-[#DCC99B]/80 text-sm sm:text-base"
-                >
-                  {isIOS ? '🍎 Print Receipt' : '🖨️ Print Receipt'}
-                </button>
+                {/* Direct Bluetooth Print (non-iPad or as fallback) */}
+                {!isIOS && (
+                  <button
+                    onClick={handlePrint}
+                    className="w-full max-w-[150px] h-10 sm:h-12 bg-[#DCC99B]/70 text-black rounded-[20px] font-semibold hover:bg-[#DCC99B]/80 text-sm sm:text-base"
+                  >
+                    🖨️ Print Receipt
+                  </button>
+                )}
                 
-                {/* iPad-specific Safari print button */}
+                {/* iPad-specific Safari print button (backup) */}
                 {isIOS && (
                   <button
                     onClick={() => window.print()}
