@@ -342,9 +342,31 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Print server running on http://localhost:${PORT}`);
+// Get local IP address for display
+const getLocalIP = () => {
+  const networkInterfaces = os.networkInterfaces();
+  for (const interfaceName in networkInterfaces) {
+    const addresses = networkInterfaces[interfaceName];
+    for (const addr of addresses) {
+      // Look for IPv4, non-internal address
+      if (addr.family === 'IPv4' && !addr.internal) {
+        return addr.address;
+      }
+    }
+  }
+  return 'localhost';
+};
+
+// Start server - Listen on 0.0.0.0 to accept connections from all network interfaces
+app.listen(PORT, '0.0.0.0', () => {
+  const localIP = getLocalIP();
+  console.log(`\n${'='.repeat(50)}`);
+  console.log(`Print server running on:`);
+  console.log(`  Local:   http://localhost:${PORT}`);
+  console.log(`  Network: http://${localIP}:${PORT}`);
+  console.log(`${'='.repeat(50)}\n`);
+  console.log(`📱 iPad should connect to: http://${localIP}:${PORT}`);
+  console.log(`${'='.repeat(50)}\n`);
   initializePrinter();
 });
 
