@@ -14,13 +14,12 @@ function Invoice({ token }) {
   const [error, setError] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false); // State for toggling sidebar on mobile
   
-  // Print Server for iPad → Laptop → USB Printer
+  // Print Server for iPad → Laptop → USB Printer (no connection needed, just send!)
   const [printServer] = useState(() => {
     const adapter = new PrintServerAdapter();
     adapter.setServerUrl(PRINT_SERVER_CONFIG.DEFAULT_URL);
     return adapter;
   });
-  const [printServerConnected, setPrintServerConnected] = useState(false);
   
   // Use global printer context instead of local state
   const { 
@@ -108,33 +107,6 @@ function Invoice({ token }) {
     }
   }, [tableNumber, orderType, orderId, token, foodItems]); // Added foodItems to dependency array
 
-  // Auto-connect to print server on mount
-  useEffect(() => {
-    const autoConnectPrintServer = async () => {
-      console.log('🔄 Auto-connecting to print server:', PRINT_SERVER_CONFIG.DEFAULT_URL);
-      
-      try {
-        const result = await printServer.checkConnection();
-        if (result.success) {
-          setPrintServerConnected(true);
-          console.log('✅ Print server connected:', result.printer);
-        } else {
-          setPrintServerConnected(false);
-          console.warn('⚠️ Print server offline:', result.error);
-        }
-      } catch (error) {
-        setPrintServerConnected(false);
-        console.error('❌ Print server connection failed:', error);
-      }
-    };
-
-    autoConnectPrintServer();
-    
-    // Re-check connection every 30 seconds
-    const interval = setInterval(autoConnectPrintServer, 30000);
-    return () => clearInterval(interval);
-  }, [printServer]);
-
   const handleCheckout = async () => {
     if (!paymentMethod) {
       setError("Please select a payment method");
@@ -182,15 +154,10 @@ function Invoice({ token }) {
     }
   };
 
-  // Print via laptop print server
+  // Print via laptop print server (DIRECT - no connection check needed!)
   const handlePrintViaServer = async () => {
     if (!order) {
       setError("No order to print");
-      return;
-    }
-
-    if (!printServerConnected) {
-      alert(`⚠️ Cannot connect to print server at:\n${PRINT_SERVER_CONFIG.DEFAULT_URL}\n\nMake sure:\n1. Laptop print server is running\n2. iPad and laptop are on same WiFi\n3. Check the IP address in src/config/printServer.js`);
       return;
     }
 
@@ -224,17 +191,17 @@ function Invoice({ token }) {
     };
 
     try {
+      console.log('🖨️ Sending print request to:', PRINT_SERVER_CONFIG.DEFAULT_URL);
       const result = await printServer.print(receiptData);
       
       if (result.success) {
-        alert(`✅ Receipt sent to laptop printer!\n\nOrder ID: ${result.orderId}\nMode: ${result.mode}`);
+        alert(`✅ Receipt printed successfully!\n\nOrder ID: ${order.id}\nCheck your XPrinter!`);
       } else {
-        throw new Error(result.message);
+        throw new Error(result.message || 'Print failed');
       }
     } catch (error) {
       console.error('Print server error:', error);
-      alert(`❌ Print failed: ${error.message}\n\nMake sure laptop print server is still running.`);
-      setPrintServerConnected(false);
+      alert(`❌ Print failed!\n\n${error.message}\n\nMake sure:\n1. Laptop print server is running\n2. iPad & laptop on same WiFi\n3. Printer is turned ON`);
     }
   };
 
@@ -522,30 +489,13 @@ function Invoice({ token }) {
                   </div>
                 )}
                 
-                {/* Laptop Print Server Status Indicator */}
+                {/* Print via Laptop Server Button - iPad's main print button */}
                 {isIOS && (
-                  <div className={`w-full max-w-[300px] p-3 rounded-lg text-center text-sm font-semibold ${
-                    printServerConnected 
-                      ? 'bg-green-100 text-green-800 border-2 border-green-300' 
-                      : 'bg-yellow-100 text-yellow-800 border-2 border-yellow-300'
-                  }`}>
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="text-lg">{printServerConnected ? '✅' : '⏳'}</span>
-                      <span>{printServerConnected ? 'Laptop Printer Ready' : 'Connecting to laptop...'}</span>
-                    </div>
-                    <div className="text-xs mt-1 opacity-75">
-                      {PRINT_SERVER_CONFIG.DEFAULT_URL}
-                    </div>
-                  </div>
-                )}
-
-                {/* Print via Laptop Server Button (Main Print Option for iPad) */}
-                {isIOS && printServerConnected && (
                   <button
                     onClick={handlePrintViaServer}
                     className="w-full max-w-[200px] h-12 sm:h-14 bg-green-600 text-white rounded-[20px] font-bold text-base sm:text-lg hover:bg-green-700 shadow-lg"
                   >
-                    🖨️ Print via Laptop
+                    🖨️ Print Receipt
                   </button>
                 )}
                 
