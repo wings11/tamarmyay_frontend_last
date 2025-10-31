@@ -14,8 +14,13 @@ const PORT = process.env.PORT || 3001;
 // Your printer name from Windows (.env file)
 const PRINTER_NAME = process.env.WINDOWS_PRINTER_NAME || 'XP-58 (copy 1)';
 
-// Enable CORS and JSON
-app.use(cors());
+// Enable CORS for ALL origins (iPad needs this!)
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+  credentials: false
+}));
 app.use(express.json());
 
 // Health check endpoint
@@ -112,10 +117,12 @@ const formatReceipt = (receiptData) => {
 app.post('/print', (req, res) => {
   const receiptData = req.body;
   
-  console.log('📝 Print request received');
+  console.log('\n' + '='.repeat(60));
+  console.log('📝 PRINT REQUEST RECEIVED from:', req.ip);
   console.log('   Order ID:', receiptData.orderId || 'N/A');
   console.log('   Items:', receiptData.items?.length || 0);
   console.log('   Total:', receiptData.total || '0');
+  console.log('='.repeat(60));
   
   // Format receipt with ESC/POS commands
   const receipt = formatReceipt(receiptData)
