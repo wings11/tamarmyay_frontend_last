@@ -1,0 +1,126 @@
+# ✅ NEW LAPTOP SETUP - QUICK CHECKLIST
+
+Print this page and check off each step!
+
+---
+
+## Pre-Setup
+
+- [ ] New laptop has Windows
+- [ ] USB thermal printer available
+- [ ] USB cable available
+- [ ] WiFi network name and password known
+
+---
+
+## Install Software (15 min)
+
+- [ ] Download Node.js from https://nodejs.org/
+- [ ] Install Node.js (click Next until done)
+- [ ] Restart computer
+- [ ] Open Command Prompt and type: `node --version`
+- [ ] Confirm version number shows (e.g., v18.x.x)
+
+---
+
+## Copy Files (5 min)
+
+**Choose ONE:**
+
+### Option A: From USB/Old Laptop
+- [ ] Copy entire `ft` folder to USB drive
+- [ ] Paste to new laptop Desktop
+
+### Option B: From GitHub
+- [ ] Download from: github.com/wings11/tamarmyay_frontend_last
+- [ ] Extract ZIP file
+- [ ] Put in: Desktop\Projects\tamar myay\ft
+
+---
+
+## Install Dependencies (10 min)
+
+Open Command Prompt:
+
+- [ ] Run: `cd Desktop\Projects\tamar myay\ft`
+- [ ] Run: `npm install` (wait 2-5 min)
+- [ ] Run: `cd print-server`
+- [ ] Run: `npm install` (wait 1-2 min)
+
+---
+
+## Setup Printer (5 min)
+
+- [ ] Connect XP-58 printer via USB
+- [ ] Turn on printer
+- [ ] Run: `wmic printer get name`
+- [ ] Copy the exact printer name
+- [ ] Open: `ft\print-server\.env` in Notepad
+- [ ] Update: `WINDOWS_PRINTER_NAME=YourPrinterName`
+- [ ] Save file
+
+---
+
+## Get Laptop IP (2 min)
+
+- [ ] Run: `ipconfig` in Command Prompt
+- [ ] Find IPv4 Address under "Wireless LAN"
+- [ ] Write it here: `192.168.1.___`
+
+---
+
+## Update Configuration (3 min)
+
+- [ ] Open: `ft\src\config\printServer.js`
+- [ ] Change IP to your laptop IP
+- [ ] Save file
+
+---
+
+## Test System (5 min)
+
+- [ ] Double-click: `START-RESTAURANT-POS.bat`
+- [ ] Wait 10 seconds
+- [ ] Open browser: `http://localhost:3000`
+- [ ] Create test order
+- [ ] Try printing
+- [ ] Confirm receipt prints
+
+---
+
+## Test from iPad (3 min)
+
+- [ ] Connect iPad to same WiFi
+- [ ] Open Safari
+- [ ] Go to: `http://[your-laptop-ip]:3000`
+- [ ] Create test order
+- [ ] Try printing
+- [ ] Confirm receipt prints
+
+---
+
+## Create Shortcut (1 min)
+
+- [ ] Run: `CREATE-DESKTOP-SHORTCUT.bat`
+- [ ] Confirm shortcut appears on Desktop
+
+---
+
+## ✅ COMPLETE!
+
+**Total Time:** ~45 minutes
+
+**Daily Use:** 
+Just double-click "Start Restaurant POS" on Desktop!
+
+---
+
+## 📞 Contact
+
+If stuck, contact: _________________
+
+Setup Date: ___/___/2025
+
+Laptop IP: 192.168.1._____
+
+Printer Name: _____________________

@@ -1,42 +1,57 @@
 @echo off
-title Tamarmyay POS System - Production
+title TAMARMYAY Restaurant POS - Starting...
+color 0A
+
+echo.
 echo ========================================
-echo    TAMARMYAY POS SYSTEM - PRODUCTION
+echo    TAMARMYAY RESTAURANT POS SYSTEM
 echo ========================================
 echo.
-echo Starting Print Server...
+echo [Step 1/2] Starting Print Server...
 cd /d "%~dp0print-server"
-start "Print Server" cmd /k "node server.js"
+start "Print Server - Port 3001" cmd /k "npm start"
 
+echo.
 echo Waiting for Print Server to initialize...
-timeout /t 3 /nobreak >nul
+timeout /t 4 /nobreak >nul
 
-echo.
-echo Starting React App...
+echo [Step 2/2] Starting POS Website...
 cd /d "%~dp0"
-start "React App" cmd /k "npm start"
+start "POS Website - Port 3000" cmd /k "npm start"
 
 echo.
 echo ========================================
-echo        PRODUCTION SYSTEM READY
+echo          SYSTEM STARTED!
 echo ========================================
 echo.
-echo React App: http://localhost:3000
-echo Print Server: http://localhost:3001
+
+REM Get local IP address
+for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4 Address"') do (
+    set IP=%%a
+    goto :found
+)
+:found
+set IP=%IP:~1%
+
+echo Print Server running at:
+echo   - Laptop: http://localhost:3001
+echo   - iPad:   http://%IP%:3001
 echo.
-echo IMPORTANT FOR RESTAURANT USE:
-echo 1. Connect your POS printer via USB
-echo 2. Configure printer in print-server/server.js
-echo 3. Test printing before first customer
+echo POS Website running at:
+echo   - Laptop: http://localhost:3000
+echo   - iPad:   http://%IP%:3000
 echo.
-echo Press any key to open system status...
+echo ========================================
+echo   INSTRUCTIONS FOR CASHIER (iPad):
+echo ========================================
+echo 1. Open Safari on iPad
+echo 2. Go to: http://%IP%:3000
+echo 3. Navigate to any order and print!
+echo.
+echo The printer should be ON and connected via USB.
+echo.
+echo ========================================
+echo.
+echo Press any key to exit this window
+echo (Print Server and POS will keep running)
 pause >nul
-
-echo Opening system status...
-start http://localhost:3001/printer/status
-start http://localhost:3000
-
-echo.
-echo System is running. Close this window to stop both servers.
-echo ========================================
-pause
