@@ -7,7 +7,7 @@ echo ========================================
 echo.
 
 REM Get the path to this batch file
-set SCRIPT_PATH=%~dp0START-RESTAURANT-POS.bat
+set SCRIPT_PATH=%~dp0START-POS-SYSTEM.bat
 
 REM Get the Desktop path (OneDrive Desktop)
 set DESKTOP=%USERPROFILE%\OneDrive\Desktop
